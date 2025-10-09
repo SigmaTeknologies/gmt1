@@ -4,7 +4,7 @@ export const companyInfoData = {
     name: "GMT Safety Solutions",
     email: "george@gmtsafety.co.za",
     primary_phone: "+27 69 512 3445",
-    secondary_phone: "+27 83 734 4733", // Optional
+    secondary_phone: "+27 83 734 4733",
     business_hours: "Mon - Fri: 8:00 AM - 5:00 PM",
     footer_description: "Your trusted partner in creating safer, compliant, and more productive workplaces. We offer expert training and consultancy tailored to your needs.",
     socials: {
@@ -332,6 +332,7 @@ export const servicesData = [
                 type: 'paragraph',
                 text: "Many industrial companies currently manage their hazardous waste by dumping in general waste dumps or even in open ground. This practice is an environmental issue globally as well as in South Africa. Legislation introduced in 2009, is aimed at stopping the incorrect and illegal hazardous waste disposal methods that are currently being used, as well as to build up a database of which waste streams come from where and how big they are."
             },
+            //Add more services
             {
                 type: 'heading',
                 level: 3,
@@ -602,23 +603,3 @@ export const aboutUsData = {
     ]
 };
 
-// For Header component, defines structure of nav items including dropdowns
-export const navLinksData = [
-    { id: 'home', text: 'Home', type: 'link' },
-    { id: 'courses', text: 'Courses', type: 'link' },
-    {
-        id: 'services',
-        text: 'Services',
-        type: 'dropdown',
-        // Sub-items will be dynamically populated from servicesData titles in Header component
-        // Or you can pre-define them here if you want different text for dropdown than service card title
-        subItems: servicesData.map(service => ({
-            id: service.id, // To link to the service card in #services section (future enhancement)
-            text: service.navTitle || service.title, // Use navTitle if available, else main title
-            href: `#services` // All dropdown items point to the main services section for now
-        }))
-    },
-    { id: 'testimonials', text: 'Testimonials', type: 'link' },
-    { id: 'about', text: 'About Us', type: 'link' },
-    { id: 'contact', text: 'Contact', type: 'link' },
-];
