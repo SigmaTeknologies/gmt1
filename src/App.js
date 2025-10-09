@@ -14,13 +14,9 @@ import { createClient } from "@supabase/supabase-js";
 import { GlobalStyles } from "./GlobalStyles"; // Import global styles
 // Import specific icons from react-icons/fa for Font Awesome
 import {
-  FaEye,
-  FaEyeSlash,
   FaGraduationCap,
   FaBook,
   FaConciergeBell,
-  FaCheck,
-  FaRegCopy,
   FaCode,
   FaShoppingCart,
   FaBars,
@@ -61,9 +57,12 @@ import {
   FaTachometerAlt,
   FaPlus,
   FaMinus,
-  FaEye,
-  FaEyeSlash,
+  FaEye,       // <-- Present only once
+  FaEyeSlash,  // <-- Present only once
   FaBookOpen,
+  FaCheck,
+  FaRegCopy,
+  FaEyeOff,
 } from "react-icons/fa";
 import { FaChevronDown } from "react-icons/fa6";
 import Lottie from "lottie-react";
@@ -6006,7 +6005,7 @@ const PasswordDemo = () => {
               alignItems: "center",
             }}
           >
-            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            {showPassword ? <FaEyeOff size={18} /> : <FaEye size={18} />}
           </button>
         </div>
       </div>
