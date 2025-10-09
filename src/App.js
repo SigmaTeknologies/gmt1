@@ -62,7 +62,6 @@ import {
   FaBookOpen,
   FaCheck,
   FaRegCopy,
-  FaEyeOff,
 } from "react-icons/fa";
 import { FaChevronDown } from "react-icons/fa6";
 import Lottie from "lottie-react";
@@ -6005,7 +6004,7 @@ const PasswordDemo = () => {
               alignItems: "center",
             }}
           >
-            {showPassword ? <FaEyeOff size={18} /> : <FaEye size={18} />}
+            {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
           </button>
         </div>
       </div>
