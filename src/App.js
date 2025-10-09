@@ -12,9 +12,10 @@ import {
 } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { GlobalStyles } from "./GlobalStyles"; // Import global styles
-import { Eye, EyeOff, Check, X } from "lucide-react";
 // Import specific icons from react-icons/fa for Font Awesome
 import {
+  FaEye,
+  FaEyeSlash,
   FaGraduationCap,
   FaBook,
   FaConciergeBell,
