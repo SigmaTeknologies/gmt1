@@ -14,8 +14,10 @@ import { createClient } from "@supabase/supabase-js";
 import { GlobalStyles } from "./GlobalStyles"; // Import global styles
 // Import specific icons from react-icons/fa for Font Awesome
 import {
+  FaTrophy,
   FaGraduationCap,
   FaBook,
+  FaFileArchive,
   FaConciergeBell,
   FaCode,
   FaShoppingCart,
@@ -57,14 +59,15 @@ import {
   FaTachometerAlt,
   FaPlus,
   FaMinus,
-  FaEye,       // <-- Present only once
-  FaEyeSlash,  // <-- Present only once
+  FaEye, // <-- Present only once
+  FaEyeSlash, // <-- Present only once
   FaBookOpen,
   FaCheck,
   FaRegCopy,
 } from "react-icons/fa";
 import { FaChevronDown } from "react-icons/fa6";
 import Lottie from "lottie-react";
+import JSZip from "jszip";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
 // NOTE: Hardcoded data import has been removed.
@@ -3053,6 +3056,7 @@ const ServiceCard = ({ service, onSelectService }) => {
       </div>
       <div className="gmt-card__content">
         <h3 className="gmt-card__title">{service.title}</h3>
+
         <p className="gmt-card__description">
           {service.description || "More information coming soon."}
         </p>
@@ -6660,18 +6664,12 @@ const OrderRow = ({ order }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
-
-  // Change 1: State Management - Added new state variables for download functionality
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const addToast = useToast();
 
-  // ================================================================== //
-  // ============ 1. ADD THE PHONE FORMATTING UTILITY HERE ============ //
-  // ================================================================== //
   const formatSAPhoneNumber = (phone) => {
-    if (!phone) return "N/A"; // Handle cases where phone might not exist
-    // This logic handles numbers stored as '2771...' or '071...'
+    if (!phone) return "N/A";
     let digits = phone.toString().replace(/\D/g, "");
     if (digits.length === 10 && digits.startsWith("0")) {
       digits = "27" + digits.substring(1);
@@ -6682,36 +6680,76 @@ const OrderRow = ({ order }) => {
         7
       )} ${digits.slice(7, 11)}`;
     }
-    return phone; // Return original if it doesn't match standard SA format
+    return phone;
   };
 
-  // Change 2: The Download Logic - Core download functionality
-  const handleDownload = async (filePath) => {
-    if (!filePath || isDownloading) return;
-    setIsDownloading(true);
+  /**
+   * Downloads all associated study materials as a single zip file.
+   * This function now correctly handles the text[] array from the database.
+   */
+  const handleDownloadAll = async () => {
+    // 1. Normalize the file path data into a consistent array.
+    const pathsToDownload = Array.isArray(order.study_material_path)
+      ? order.study_material_path
+      : [];
+
+    if (pathsToDownload.length === 0 || isDownloadingAll) {
+      if (pathsToDownload.length === 0) {
+        addToast("No study materials found for this order.", "error");
+      }
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    addToast("Preparing your download... This may take a moment.", "info");
+
     try {
-      const { data, error } = await supabase.storage
-        .from("study_materials")
-        .createSignedUrl(filePath, 60); // 60-second valid link
+      // 2. Loop through the array and get a signed URL for EACH path individually.
+      // This is the critical part that fixes the "Invalid key" error.
+      const urlPromises = pathsToDownload.map(
+        (path) =>
+          supabase.storage.from("study_materials").createSignedUrl(path, 60) // 60-second valid link
+      );
+      const urlResults = await Promise.all(urlPromises);
 
-      if (error) throw error;
+      const successfulUrls = urlResults.map((result) => {
+        if (result.error) {
+          console.error("Signed URL Error:", result.error);
+          throw new Error(`Could not get a secure link for a file.`);
+        }
+        return { path: result.data.path, url: result.data.signedUrl };
+      });
 
-      // Extract filename from path for download attribute
-      const fileName = filePath.split("/").pop() || "study_material.pdf";
+      addToast(`Downloading ${successfulUrls.length} file(s)...`, "info");
+      const blobPromises = successfulUrls.map((item) =>
+        fetch(item.url).then((res) => res.blob())
+      );
+      const blobs = await Promise.all(blobPromises);
 
+      addToast("Compressing files into a zip archive...", "info");
+      const zip = new JSZip();
+      blobs.forEach((blob, index) => {
+        const fileName =
+          pathsToDownload[index].split("/").pop() || `file_${index + 1}.zip`;
+        zip.file(fileName, blob);
+      });
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
       const link = document.createElement("a");
-      link.href = data.signedUrl;
-      link.setAttribute("download", fileName);
+      link.href = URL.createObjectURL(zipBlob);
+      link.download = `GMT_Order_${order.id.substring(0, 8)}_Materials.zip`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
 
       addToast("Download started successfully!", "success");
+      setIsMaterialModalOpen(false);
     } catch (error) {
-      console.error("Download error:", error);
-      addToast("Could not download file. Please try again.", "error");
+      console.error("Download all error:", error);
+      addToast(`Download failed: ${error.message}`, "error");
     } finally {
-      setIsDownloading(false);
+      setIsDownloadingAll(false);
     }
   };
 
@@ -7008,7 +7046,6 @@ const OrderRow = ({ order }) => {
       fontSize: "0.85rem",
       fontWeight: "500",
     },
-    // NEW: Pulsing Study Button Styles
     studyButton: {
       display: "flex",
       alignItems: "center",
@@ -7028,21 +7065,11 @@ const OrderRow = ({ order }) => {
     },
   };
 
-  // Add the pulse keyframes animation as a style tag
   const pulseAnimation = `
     @keyframes pulse {
-      0% {
-        transform: scale(1);
-        box-shadow: 0 3px 8px rgba(40, 167, 69, 0.3);
-      }
-      50% {
-        transform: scale(1.05);
-        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.5);
-      }
-      100% {
-        transform: scale(1);
-        box-shadow: 0 3px 8px rgba(40, 167, 69, 0.3);
-      }
+      0% { transform: scale(1); box-shadow: 0 3px 8px rgba(40, 167, 69, 0.3); }
+      50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(40, 167, 69, 0.5); }
+      100% { transform: scale(1); box-shadow: 0 3px 8px rgba(40, 167, 69, 0.3); }
     }
   `;
 
@@ -7052,11 +7079,17 @@ const OrderRow = ({ order }) => {
     year: "numeric",
   });
 
+  // This logic now robustly checks for a non-empty string (old data) OR a non-empty array (new data).
+  const hasStudyMaterials =
+    order.status === "Completed" &&
+    ((typeof order.study_material_path === "string" &&
+      order.study_material_path.length > 0) ||
+      (Array.isArray(order.study_material_path) &&
+        order.study_material_path.length > 0));
+
   return (
     <>
-      {/* Add the pulse animation CSS */}
       <style>{pulseAnimation}</style>
-
       <div style={styles.card}>
         <button
           style={styles.headerButton}
@@ -7087,8 +7120,7 @@ const OrderRow = ({ order }) => {
                 <div style={styles.detailsSection}>
                   <div style={styles.headerContainer}>
                     <h4 style={styles.detailsHeader}>Order Items</h4>
-                    {/* Change 3: The "View Study Material" Button with Pulse Animation */}
-                    {order.study_material_path && (
+                    {hasStudyMaterials && (
                       <button
                         style={styles.studyButton}
                         onClick={(e) => {
@@ -7316,9 +7348,6 @@ const OrderRow = ({ order }) => {
                               }}
                             >
                               <FaPhoneAlt size={12} color="#008080" />
-                              {/* ============================================= */}
-                              {/* =========== 2. APPLY THE FORMATTING =========== */}
-                              {/* ============================================= */}
                               {formatSAPhoneNumber(order.billing_details.phone)}
                             </div>
                           </td>
@@ -7399,1162 +7428,371 @@ const OrderRow = ({ order }) => {
           </div>
         </div>
       </div>
+
       <PaymentModal
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
+        orderTotal={order.order_total}
       />
 
-      {/* Change 4: Rendering the Download Modal */}
       <StudyMaterialModal
         isOpen={isMaterialModalOpen}
         onClose={() => setIsMaterialModalOpen(false)}
         order={order}
-        onDownload={handleDownload}
-        isDownloading={isDownloading}
+        onDownload={handleDownloadAll}
+        isDownloading={isDownloadingAll}
       />
     </>
   );
 };
 
-const StudyMaterialModal = ({
-  isOpen,
-  onClose,
-  order,
-  onDownload,
-  isDownloading,
-}) => {
+const StudyMaterialModal = ({ isOpen, onClose, order, onDownload, isDownloading }) => {
   if (!isOpen) return null;
 
-  const [lottieAnimationData, setLottieAnimationData] = useState(null);
-
-  const remoteLottieUrl =
-    "https://lottie.host/890f5e04-7429-4721-a20c-26155694c03c/K9Y55oN4gL.json";
-  const localLottiePublicPath =
-    (process.env.PUBLIC_URL || "") + "/animations/study-animation.json";
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const loadAnimation = async () => {
-      if (!isOpen) return;
-
-      try {
-        const localResp = await fetch(localLottiePublicPath);
-        if (!cancelled && localResp.ok) {
-          const json = await localResp.json();
-          setLottieAnimationData(json);
-          return;
-        }
-      } catch (err) {
-        console.warn(
-          "Local Lottie fetch failed or not found, falling back to remote.",
-          err
-        );
-      }
-
-      try {
-        const remoteResp = await fetch(remoteLottieUrl);
-        if (!cancelled && remoteResp.ok) {
-          const json = await remoteResp.json();
-          setLottieAnimationData(json);
-        }
-      } catch (error) {
-        console.error("Error fetching remote Lottie animation:", error);
-      }
-    };
-
-    loadAnimation();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen]);
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const getFileName = (filePath) => {
-    if (!filePath) return "Study Material";
-    const fileName = filePath.split("/").pop();
-    return fileName.replace(
-      /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}_/,
-      ""
-    );
-  };
-
-  const getFileExtension = (filePath) => {
-    if (!filePath) return "";
-    return filePath.split(".").pop().toLowerCase();
-  };
-
-  const getFileIcon = (extension) => {
-    const iconStyle = { width: "40px", height: "40px" };
-    switch (extension) {
-      case "pdf":
-        return (
-          <svg
-            style={iconStyle}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#dc2626"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
-          </svg>
-        );
-      case "doc":
-      case "docx":
-        return (
-          <svg
-            style={iconStyle}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#2563eb"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-          </svg>
-        );
-      case "zip":
-      case "rar":
-        return (
-          <svg
-            style={iconStyle}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#ea580c"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-          </svg>
-        );
-      default:
-        return (
-          <svg
-            style={iconStyle}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#6b7280"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-          </svg>
-        );
+    if (typeof filePath !== 'string' || !filePath) {
+      return 'Invalid File Path';
     }
+    const fileName = filePath.split('/').pop();
+    // Removes a UUID-like prefix if it exists
+    return fileName.replace(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}_/, '');
   };
-
-  const fileName = getFileName(order.study_material_path);
-  const fileExtension = getFileExtension(order.study_material_path);
 
   const handleDownloadClick = () => {
-    onDownload(order.study_material_path);
+    onDownload();
   };
+
+  const materials = Array.isArray(order.study_material_path)
+    ? order.study_material_path
+    : (typeof order.study_material_path === 'string' && order.study_material_path)
+      ? [order.study_material_path]
+      : [];
+
+  const validMaterials = materials.filter(Boolean);
+
+  // A subtle, performant SVG background pattern
+  const svgBgPattern = `url('data:image/svg+xml,%3Csvg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"%3E%3Ccircle cx="2" cy="2" r="1" fill="%23cbd5e1" fill-opacity="0.4"/%3E%3C/svg%3E')`;
 
   const styles = {
     overlay: {
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: "rgba(0, 0, 0, 0.65)",
-      backdropFilter: "blur(12px)",
-      display: "flex",
-      alignItems: "stretch",
-      justifyContent: "stretch",
-      zIndex: 10000,
-      padding: "32px",
-      animation: "fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.75)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 10000, padding: 0,
+      animation: 'fadeIn 0.3s ease',
     },
     modal: {
-      backgroundColor: "#f8fafc",
-      borderRadius: "32px",
-      width: "100%",
-      height: "100%",
-      display: "flex",
-      flexDirection: "column",
-      position: "relative",
-      boxShadow:
-        "0 25px 80px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)",
-      border: "1px solid rgba(255, 255, 255, 0.15)",
-      animation: "slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
-      overflow: "hidden",
+      backgroundColor: '#f8fafc',
+      backgroundImage: svgBgPattern,
+      width: '100%', height: '100%',
+      display: 'flex', flexDirection: 'column', position: 'relative',
+      boxShadow: '0 15px 50px -10px rgba(0, 0, 0, 0.3)',
+      animation: 'slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+      overflow: 'hidden',
     },
     header: {
-      background:
-        "linear-gradient(135deg, #0066CC 0%, #004999 50%, #003366 100%)",
-      padding: "32px 28px",
-      position: "relative",
-      overflow: "hidden",
-      flexShrink: 0,
+      background: isMobile ? '#004999' : 'linear-gradient(135deg, #0066CC 0%, #004999 50%, #003366 100%)',
+      padding: isMobile ? '24px 20px' : '32px 28px',
+      position: 'relative', overflow: 'hidden', flexShrink: 0,
     },
     decorativePattern: {
-      position: "absolute",
-      top: 0,
-      right: 0,
-      width: "100%",
-      height: "100%",
-      opacity: 0.06,
-      backgroundImage: `
-        radial-gradient(circle at 20% 50%, rgba(255,255,255,0.15) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
-        repeating-linear-gradient(45deg, transparent, transparent 15px, rgba(255,255,255,0.03) 15px, rgba(255,255,255,0.03) 30px)
-      `,
-    },
-    decorativeCircle1: {
-      position: "absolute",
-      top: "-80px",
-      right: "-80px",
-      width: "240px",
-      height: "240px",
-      background:
-        "radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%)",
-      borderRadius: "50%",
-      filter: "blur(20px)",
-    },
-    decorativeCircle2: {
-      position: "absolute",
-      bottom: "-60px",
-      left: "-60px",
-      width: "200px",
-      height: "200px",
-      background:
-        "radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%)",
-      borderRadius: "50%",
-      filter: "blur(15px)",
-    },
-    glowEffect: {
-      position: "absolute",
-      top: "50%",
-      left: "50%",
-      transform: "translate(-50%, -50%)",
-      width: "120%",
-      height: "120%",
-      background:
-        "radial-gradient(ellipse at center, rgba(255, 255, 255, 0.05) 0%, transparent 50%)",
-      pointerEvents: "none",
+      position: 'absolute', top: 0, right: 0, width: '100%', height: '100%', opacity: 0.06,
+      backgroundImage: `radial-gradient(circle at 20% 50%, rgba(255,255,255,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%)`,
     },
     closeButton: {
-      position: "absolute",
-      top: "20px",
-      right: "20px",
-      background: "rgba(255, 255, 255, 0.12)",
-      backdropFilter: "blur(10px)",
-      border: "1px solid rgba(255, 255, 255, 0.25)",
-      fontSize: "1.1rem",
-      cursor: "pointer",
-      color: "#ffffff",
-      padding: "0.5rem",
-      borderRadius: "12px",
-      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      width: "40px",
-      height: "40px",
-      zIndex: 2,
+      position: 'absolute', top: isMobile ? '12px' : '20px', right: isMobile ? '12px' : '20px',
+      background: 'rgba(255, 255, 255, 0.12)',
+      border: '1px solid rgba(255, 255, 255, 0.25)', fontSize: '1.1rem',
+      cursor: 'pointer', color: '#ffffff', padding: '0.5rem',
+      borderRadius: '12px', transition: 'transform 0.3s ease',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      width: '40px', height: '40px', zIndex: 2,
     },
-    headerContent: {
-      position: "relative",
-      zIndex: 1,
-    },
+    headerContent: { position: 'relative', zIndex: 1 },
     iconWrapper: {
-      width: "64px",
-      height: "64px",
-      background: "rgba(255, 255, 255, 0.15)",
-      backdropFilter: "blur(10px)",
-      borderRadius: "18px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: "16px",
-      border: "1px solid rgba(255, 255, 255, 0.25)",
-      boxShadow:
-        "0 8px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
-      animation: "float 3s ease-in-out infinite",
+      width: isMobile ? '52px' : '64px', height: isMobile ? '52px' : '64px',
+      background: 'rgba(255, 255, 255, 0.15)',
+      borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      marginBottom: isMobile ? '12px' : '16px', border: '1px solid rgba(255, 255, 255, 0.25)',
+      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+      animation: 'float 3s ease-in-out infinite',
     },
     title: {
-      fontSize: "2rem",
-      fontWeight: "800",
-      color: "#ffffff",
-      marginBottom: "8px",
-      lineHeight: "1.2",
-      textAlign: "left",
-      fontFamily: "'Montserrat', 'Inter', sans-serif",
-      letterSpacing: "-0.02em",
-      textShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
+      fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '800', color: '#ffffff',
+      marginBottom: '8px', lineHeight: '1.2', textAlign: 'left',
+      fontFamily: "'Montserrat', 'Inter', sans-serif", letterSpacing: '-0.02em',
+      textShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
     },
     subtitle: {
-      fontSize: "0.95rem",
-      color: "rgba(255, 255, 255, 0.92)",
-      fontWeight: "500",
-      margin: 0,
-      lineHeight: "1.5",
-      textAlign: "left",
-      maxWidth: "90%",
+      fontSize: isMobile ? '0.85rem' : '0.95rem', color: 'rgba(255, 255, 255, 0.92)',
+      fontWeight: '500', margin: 0, lineHeight: '1.5', textAlign: 'left', maxWidth: '90%',
     },
     body: {
-      padding: "28px",
-      flex: 1,
-      overflowY: "auto",
-      display: "flex",
-      flexDirection: "column",
-      gap: "24px",
+      padding: isMobile ? '20px 16px' : '28px', flex: 1, overflowY: 'auto',
+      display: 'flex', flexDirection: 'column', gap: isMobile ? '20px' : '24px',
     },
     orderInfoCard: {
-      background: "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)",
-      padding: "22px",
-      borderRadius: "20px",
-      border: "1px solid #bae6fd",
-      position: "relative",
-      overflow: "hidden",
-      boxShadow: "0 4px 12px rgba(14, 165, 233, 0.08)",
-      transition: "transform 0.3s ease, box-shadow 0.3s ease",
+      background: isMobile ? '#e0f2fe' : 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+      padding: isMobile ? '18px' : '22px', borderRadius: '16px',
+      border: '1px solid #bae6fd', position: 'relative', overflow: 'hidden',
+      boxShadow: '0 4px 12px rgba(14, 165, 233, 0.08)',
     },
-    orderInfoPattern: {
-      position: "absolute",
-      top: 0,
-      right: 0,
-      width: "140px",
-      height: "140px",
-      opacity: 0.12,
-    },
-    orderInfoContent: {
-      position: "relative",
-      zIndex: 1,
-    },
+    orderInfoContent: { position: 'relative', zIndex: 1 },
     orderInfoTitle: {
-      fontSize: "0.75rem",
-      fontWeight: "700",
-      color: "#0369a1",
-      marginBottom: "12px",
-      textTransform: "uppercase",
-      letterSpacing: "0.1em",
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
+      fontSize: '0.7rem', fontWeight: '700', color: '#0369a1',
+      marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.1em',
+      display: 'flex', alignItems: 'center', gap: '8px',
     },
     orderInfoGrid: {
-      display: "grid",
-      gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-      gap: "14px",
+      display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(140px, 1fr))',
+      gap: '12px',
     },
-    orderInfoItem: {
-      display: "flex",
-      flexDirection: "column",
-      gap: "5px",
-    },
+    orderInfoItem: { display: 'flex', flexDirection: 'column', gap: '5px' },
     orderInfoLabel: {
-      fontSize: "0.7rem",
-      color: "#0369a1",
-      fontWeight: "600",
-      textTransform: "uppercase",
-      letterSpacing: "0.05em",
+      fontSize: '0.7rem', color: '#0369a1', fontWeight: '600',
+      textTransform: 'uppercase', letterSpacing: '0.05em',
     },
-    orderInfoValue: {
-      fontSize: "0.95rem",
-      color: "#075985",
-      fontWeight: "600",
-    },
-    fileCard: {
-      background: "#ffffff",
-      border: "2px solid #e5e7eb",
-      borderRadius: "20px",
-      padding: "24px",
-      display: "flex",
-      alignItems: "center",
-      gap: "20px",
-      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
-      position: "relative",
-      overflow: "hidden",
-    },
-    fileCardGlow: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background:
-        "linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(147, 51, 234, 0.03) 100%)",
-      opacity: 0,
-      transition: "opacity 0.3s ease",
-      pointerEvents: "none",
-    },
-    fileIconWrapper: {
-      width: "72px",
-      height: "72px",
-      background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
-      borderRadius: "16px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      flexShrink: 0,
-      border: "2px solid #e2e8f0",
-      transition: "all 0.3s ease",
-      position: "relative",
-      zIndex: 1,
-    },
-    fileDetails: {
-      flex: 1,
-      minWidth: 0,
-      position: "relative",
-      zIndex: 1,
-    },
-    fileName: {
-      fontSize: "1.05rem",
-      fontWeight: "700",
-      color: "#0f172a",
-      marginBottom: "6px",
-      wordBreak: "break-word",
-      lineHeight: "1.4",
-    },
-    fileType: {
-      fontSize: "0.8rem",
-      color: "#64748b",
-      fontWeight: "600",
-      textTransform: "uppercase",
-      letterSpacing: "0.05em",
-    },
+    orderInfoValue: { fontSize: '0.95rem', color: '#075985', fontWeight: '600' },
     journeyContainer: {
-      background: "linear-gradient(135deg, #ffffff 0%, #fafafa 100%)",
-      borderRadius: "24px",
-      padding: "32px 28px",
-      border: "1px solid #e2e8f0",
-      boxShadow: "0 4px 16px rgba(0, 0, 0, 0.06)",
-      flex: 1,
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      position: "relative",
-      overflow: "hidden",
+      background: isMobile ? '#fafafa' : 'linear-gradient(135deg, #ffffff 0%, #fafafa 100%)',
+      borderRadius: '20px', padding: isMobile ? '28px 20px' : '40px 32px',
+      border: '1px solid #e2e8f0', boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
+      flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center',
+      position: 'relative', overflow: 'hidden', minHeight: isMobile ? '450px' : '350px',
     },
     journeyBg: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      opacity: 0.03,
-      backgroundImage: `
-        radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.4) 0%, transparent 50%),
-        radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.4) 0%, transparent 50%)
-      `,
-      pointerEvents: "none",
+      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.04,
+      backgroundImage: `radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.4) 0%, transparent 50%), radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.4) 0%, transparent 50%)`,
+      pointerEvents: 'none',
     },
     journeyTitle: {
-      textAlign: "center",
-      fontSize: "1.2rem",
-      fontWeight: "700",
-      color: "#1e293b",
-      marginBottom: "36px",
-      fontFamily: "'Montserrat', 'Inter', sans-serif",
-      position: "relative",
-      zIndex: 1,
-      letterSpacing: "-0.01em",
+      textAlign: 'center', fontSize: isMobile ? '1.15rem' : '1.3rem',
+      fontWeight: '700', color: '#1e293b', marginBottom: isMobile ? '32px' : '48px',
+      fontFamily: "'Montserrat', 'Inter', sans-serif", position: 'relative',
+      zIndex: 1, letterSpacing: '-0.01em',
     },
     journeyVisuals: {
-      position: "relative",
-      minHeight: "140px",
-      display: "flex",
-      alignItems: "center",
+      position: 'relative', minHeight: isMobile ? '380px' : '240px',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1,
+    },
+    svgContainer: {
+      position: 'absolute', top: '50%', left: '50%',
+      transform: 'translate(-50%, -50%)', width: '100%', height: '100%',
+      pointerEvents: 'none',
     },
     journeyPath: {
-      stroke: "#cbd5e1",
-      strokeWidth: "3",
-      strokeDasharray: 1000,
-      strokeDashoffset: 1000,
-      animation: "drawPath 2s ease-out 0.3s forwards",
-      filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.08))",
+      stroke: 'url(#pathGradient)', strokeWidth: isMobile ? '2.5' : '3',
+      fill: 'none', strokeDasharray: 1500, strokeDashoffset: 1500,
+      animation: 'drawPath 2.5s ease-out 0.5s forwards',
     },
     journeyStages: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
+      position: 'relative', display: 'flex',
+      flexDirection: isMobile ? 'column' : 'row',
+      justifyContent: isMobile ? 'center' : 'space-between',
+      alignItems: 'center', zIndex: 2, padding: isMobile ? '0' : '0 20px',
+      gap: isMobile ? '48px' : '0',
     },
     journeyStage: {
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      gap: "12px",
-      textAlign: "center",
-      opacity: 0,
-      transform: "translateY(10px)",
-      animation: "fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
-      cursor: "pointer",
-      transition: "transform 0.2s ease",
+      display: 'flex', flexDirection: isMobile ? 'row' : 'column',
+      alignItems: 'center', gap: isMobile ? '20px' : '16px',
+      textAlign: isMobile ? 'left' : 'center',
+      opacity: 0, transform: 'translateY(20px)',
+      cursor: 'pointer', transition: 'transform 0.3s ease',
+      position: 'relative', width: isMobile ? '100%' : 'auto',
+      maxWidth: isMobile ? '280px' : 'none',
     },
     journeyIcon: {
-      width: "52px",
-      height: "52px",
-      borderRadius: "50%",
-      background: "#ffffff",
-      border: "2.5px solid #e2e8f0",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
-      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+      width: isMobile ? '168px' : '172px', height: isMobile ? '168px' : '172px',
+      borderRadius: '50%', flexShrink: 0,
+      border: '3px solid #e2e8f0', display: 'flex', alignItems: 'center',
+      justifyContent: 'center', transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1), inset 0 -2px 8px rgba(0, 0, 0, 0.05)',
+      position: 'relative', zIndex: 2,
+    },
+    journeyIconInner: {
+      width: '100%', height: '100%', borderRadius: '50%',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), transparent)',
+    },
+    journeyTextWrapper: {
+      display: 'flex', flexDirection: 'column',
+      alignItems: isMobile ? 'flex-start' : 'center',
+      flex: isMobile ? 1 : 'none',
     },
     journeyLabel: {
-      fontSize: "0.75rem",
-      fontWeight: "600",
-      color: "#475569",
-      transition: "color 0.3s ease",
-      maxWidth: "90px",
+      fontSize: isMobile ? '0.95rem' : '0.85rem', fontWeight: '700', color: '#475569',
+      transition: 'color 0.3s ease', maxWidth: isMobile ? 'none' : '110px',
+      lineHeight: '1.3', textTransform: 'uppercase', letterSpacing: '0.03em',
+    },
+    journeySubtext: {
+      fontSize: isMobile ? '0.75rem' : '0.7rem', color: '#94a3b8',
+      fontWeight: '500', marginTop: '4px',
     },
     downloadSection: {
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      gap: "16px",
-      padding: "24px",
-      background: "linear-gradient(135deg, #fefce8 0%, #fef3c7 100%)",
-      borderRadius: "20px",
-      border: "1px solid #fde047",
-      marginTop: "auto",
-      boxShadow: "0 4px 12px rgba(250, 204, 21, 0.15)",
-      position: "relative",
-      overflow: "hidden",
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      gap: isMobile ? '12px' : '16px', padding: isMobile ? '20px 16px' : '24px',
+      background: isMobile ? '#fef3c7' : 'linear-gradient(135deg, #fefce8 0%, #fef3c7 100%)',
+      borderRadius: '16px', border: '1px solid #fde047', marginTop: 'auto',
+      boxShadow: '0 4px 12px rgba(250, 204, 21, 0.15)', position: 'relative',
+      overflow: 'hidden',
     },
     downloadSectionGlow: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background:
-        "radial-gradient(ellipse at center, rgba(250, 204, 21, 0.1) 0%, transparent 70%)",
-      pointerEvents: "none",
+      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+      background: 'radial-gradient(ellipse at center, rgba(250, 204, 21, 0.1) 0%, transparent 70%)',
+      pointerEvents: 'none',
     },
     readyBadge: {
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-      padding: "8px 16px",
-      background: "#dcfce7",
-      color: "#166534",
-      borderRadius: "12px",
-      fontSize: "0.8rem",
-      fontWeight: "600",
-      border: "1px solid #86efac",
-      boxShadow: "0 2px 6px rgba(22, 101, 52, 0.1)",
-      position: "relative",
-      zIndex: 1,
-      animation: "pulse 2s ease-in-out infinite",
+      display: 'flex', alignItems: 'center', gap: '8px',
+      padding: isMobile ? '6px 14px' : '8px 16px',
+      background: '#dcfce7', color: '#166534', borderRadius: '12px',
+      fontSize: isMobile ? '0.75rem' : '0.8rem', fontWeight: '600',
+      border: '1px solid #86efac', boxShadow: '0 2px 6px rgba(22, 101, 52, 0.1)',
+      position: 'relative', zIndex: 1, animation: 'pulse 2.5s ease-in-out infinite',
     },
     downloadButton: {
-      display: "inline-flex",
-      alignItems: "center",
-      gap: "12px",
-      padding: "16px 40px",
-      background: "linear-gradient(135deg, #0066CC 0%, #004999 100%)",
-      color: "#ffffff",
-      border: "none",
-      borderRadius: "14px",
-      fontSize: "1rem",
-      fontWeight: "700",
-      cursor: "pointer",
-      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-      boxShadow:
-        "0 8px 20px rgba(0, 102, 204, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
-      minWidth: "220px",
-      justifyContent: "center",
-      fontFamily: "'Montserrat', 'Inter', sans-serif",
-      textTransform: "uppercase",
-      letterSpacing: "0.05em",
-      position: "relative",
-      zIndex: 1,
-      overflow: "hidden",
+      display: 'inline-flex', alignItems: 'center', gap: isMobile ? '10px' : '12px',
+      padding: isMobile ? '14px 32px' : '16px 40px',
+      background: isMobile ? '#004999' : 'linear-gradient(135deg, #0066CC 0%, #004999 100%)',
+      color: '#ffffff', border: 'none', borderRadius: '14px',
+      fontSize: isMobile ? '0.9rem' : '1rem', fontWeight: '700',
+      cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      boxShadow: '0 8px 20px rgba(0, 102, 204, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+      minWidth: isMobile ? '200px' : '220px', justifyContent: 'center',
+      fontFamily: "'Montserrat', 'Inter', sans-serif", textTransform: 'uppercase',
+      letterSpacing: '0.05em', position: 'relative', zIndex: 1, overflow: 'hidden',
     },
     downloadButtonDisabled: {
-      background: "linear-gradient(135deg, #94a3b8 0%, #64748b 100%)",
-      cursor: "not-allowed",
-      boxShadow: "0 4px 12px rgba(148, 163, 184, 0.25)",
+      background: isMobile ? '#64748b' : 'linear-gradient(135deg, #94a3b8 0%, #64748b 100%)',
+      cursor: 'not-allowed', boxShadow: '0 4px 12px rgba(148, 163, 184, 0.25)',
     },
-    spinner: {
-      animation: "spin 1s linear infinite",
-      display: "inline-block",
-    },
+    spinner: { animation: 'spin 1s linear infinite', display: 'inline-block' },
   };
 
   const styleSheet = `
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
+    @keyframes drawPath { to { stroke-dashoffset: 0; } }
+    @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
     
-    @keyframes slideIn {
-      from { 
-        opacity: 0;
-        transform: scale(0.92) translateY(20px);
-      }
-      to { 
-        opacity: 1;
-        transform: scale(1) translateY(0);
-      }
-    }
+    .journey-stage { animation: fadeInUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    .journey-stage:nth-child(1) { animation-delay: 0.8s; }
+    .journey-stage:nth-child(2) { animation-delay: 1.1s; }
+    .journey-stage:nth-child(3) { animation-delay: 1.4s; }
     
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
+    .journey-stage:hover .journey-icon { 
+      transform: scale(1.1) translateY(-4px); 
+      box-shadow: 0 10px 30px rgba(0, 102, 204, 0.2);
     }
+    .journey-stage:hover .journey-label { color: #0f172a; }
     
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-8px); }
-    }
-    
-    @keyframes drawPath {
-      to { stroke-dashoffset: 0; }
-    }
-    
-    @keyframes fadeInUp {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.9; transform: scale(1.02); }
-    }
-
-    .journey-stage:hover .journey-icon {
-      transform: scale(1.15);
-      box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.15);
-    }
-    
-    .journey-stage:hover .journey-icon-enroll { 
-      border-color: #3b82f6;
-      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-    }
-    
-    .journey-stage:hover .journey-icon-skill { 
-      border-color: #8b5cf6;
-      background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
-    }
-    
-    .journey-stage:hover .journey-icon-milestone { 
-      border-color: #10b981;
-      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-    }
-    
-    .journey-stage:hover .journey-icon-success { 
-      border-color: #f59e0b;
-      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-    }
-    
-    .journey-stage:hover .journey-label { 
-      color: #0f172a;
-      font-weight: 700;
-    }
-    
-    .study-modal-file-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-      border-color: #cbd5e1;
-    }
-    
-    .study-modal-file-card:hover .file-card-glow {
-      opacity: 1;
-    }
-    
-    .study-modal-file-card:hover .file-icon-wrapper {
-      transform: scale(1.05);
-      border-color: #cbd5e1;
-    }
-    
-    .study-modal-order-info:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(14, 165, 233, 0.15);
-    }
-
     @media (max-width: 768px) {
-      .study-modal-overlay {
-        padding: 20px !important;
-      }
-      .study-modal {
-        border-radius: 28px !important;
-      }
-      .study-modal-header {
-        padding: 26px 20px !important;
-      }
-      .study-modal-title {
-        font-size: 1.6rem !important;
-      }
-      .study-modal-body {
-        padding: 20px !important;
-        gap: 20px !important;
-      }
-      .study-modal-file-card {
-        flex-direction: column !important;
-        text-align: center !important;
-      }
-      .journey-container { 
-        padding: 24px !important;
-        flex: 0 1 auto !important;
-      }
-      .journey-title { 
-        font-size: 1.05rem !important;
-        margin-bottom: 28px !important;
-      }
-      .journey-icon { 
-        width: 44px !important;
-        height: 44px !important;
-      }
-      .journey-label { 
-        font-size: 0.7rem !important;
-      }
-      .study-modal-download-button {
-        width: 100%;
-        padding: 14px 32px !important;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .study-modal-overlay {
-        padding: 16px !important;
-      }
-      .study-modal {
-        border-radius: 24px !important;
-      }
-      .study-modal-header {
-        padding: 22px 18px !important;
-      }
-      .study-modal-title {
-        font-size: 1.4rem !important;
-      }
-      .study-modal-icon-wrapper {
-        width: 56px !important;
-        height: 56px !important;
-      }
-      .study-modal-body {
-        padding: 18px !important;
-        gap: 18px !important;
-      }
-      .study-modal-order-info {
-        padding: 18px !important;
-      }
-      .study-modal-file-card {
-        padding: 20px !important;
-      }
-      .journey-container {
-        padding: 20px !important;
-      }
-      .journey-visuals {
-        min-height: 100px !important;
-      }
-      .study-modal-download-section {
-        padding: 20px !important;
+      .journey-stage:hover .journey-icon { 
+        transform: scale(1.05); 
       }
     }
   `;
 
+  // Mobile path is shifted left. Desktop path is unchanged.
+  const pathData = isMobile ? "M 180 50 Q 200 150, 180 250 T 180 450" : "M 100 100 Q 250 60, 400 100 T 700 100";
+  // Mobile circle positions are also shifted left to match the path.
+  const circlePositions = isMobile ? [{ cx: 180, cy: 50 }, { cx: 180, cy: 250 }, { cx: 180, cy: 450 }] : [{ cx: 100, cy: 100 }, { cx: 400, cy: 100 }, { cx: 700, cy: 100 }];
+  
+  const journeyIconStyles = [
+    { ...styles.journeyIcon, borderColor: '#10b981', background: isMobile ? '#d1fae5' : 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)' },
+    { ...styles.journeyIcon, borderColor: '#3b82f6', background: isMobile ? '#dbeafe' : 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' },
+    { ...styles.journeyIcon, borderColor: '#f59e0b', background: isMobile ? '#fef3c7' : 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)' },
+  ];
+
   return (
     <>
       <style>{styleSheet}</style>
-      <div
-        className="study-modal-overlay"
-        style={styles.overlay}
-        onClick={onClose}
-      >
-        <div
-          className="study-modal"
-          style={styles.modal}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="study-modal-header" style={styles.header}>
+      <div style={styles.overlay} onClick={onClose}>
+        <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+          <div style={styles.header}>
             <div style={styles.decorativePattern}></div>
-            <div style={styles.decorativeCircle1}></div>
-            <div style={styles.decorativeCircle2}></div>
-            <div style={styles.glowEffect}></div>
-
             <button
               style={styles.closeButton}
               onClick={onClose}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
-                e.currentTarget.style.transform = "rotate(90deg)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)";
-                e.currentTarget.style.transform = "rotate(0deg)";
-              }}
-            >
-              ✕
-            </button>
-
+              onMouseOver={(e) => { e.currentTarget.style.transform = "rotate(90deg)"; }}
+              onMouseOut={(e) => { e.currentTarget.style.transform = "rotate(0deg)"; }}
+              aria-label="Close modal"
+            >✕</button>
             <div style={styles.headerContent}>
-              <div
-                className="study-modal-icon-wrapper"
-                style={styles.iconWrapper}
-              >
-                <svg
-                  width="32"
-                  height="32"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={{ color: "#ffffff" }}
-                >
-                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                </svg>
-              </div>
-              <h2 className="study-modal-title" style={styles.title}>
-                Study Material
-              </h2>
-              <p style={styles.subtitle}>
-                Your comprehensive learning resources are ready to download
-              </p>
+              <div style={styles.iconWrapper}><FaBookOpen size={isMobile ? 26 : 32} color="#ffffff" /></div>
+              <h2 style={styles.title}>Study Material</h2>
+              <p style={styles.subtitle}>Your comprehensive learning resources are ready for download.</p>
             </div>
           </div>
 
-          <div className="study-modal-body" style={styles.body}>
-            <div
-              className="study-modal-order-info"
-              style={styles.orderInfoCard}
-            >
-              <svg
-                style={styles.orderInfoPattern}
-                viewBox="0 0 100 100"
-                fill="none"
-              >
-                <circle
-                  cx="20"
-                  cy="20"
-                  r="15"
-                  stroke="#0284c7"
-                  strokeWidth="1"
-                  opacity="0.3"
-                />
-                <circle
-                  cx="60"
-                  cy="40"
-                  r="20"
-                  stroke="#0284c7"
-                  strokeWidth="1"
-                  opacity="0.3"
-                />
-                <circle
-                  cx="80"
-                  cy="80"
-                  r="25"
-                  stroke="#0284c7"
-                  strokeWidth="1"
-                  opacity="0.3"
-                />
-              </svg>
-
+          <div style={styles.body}>
+            <div style={styles.orderInfoCard}>
               <div style={styles.orderInfoContent}>
                 <div style={styles.orderInfoTitle}>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect
-                      x="1"
-                      y="4"
-                      width="22"
-                      height="16"
-                      rx="2"
-                      ry="2"
-                    ></rect>
-                    <line x1="1" y1="10" x2="23" y2="10"></line>
-                  </svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
                   Order Information
                 </div>
                 <div style={styles.orderInfoGrid}>
-                  <div style={styles.orderInfoItem}>
-                    <span style={styles.orderInfoLabel}>Order ID</span>
-                    <span style={styles.orderInfoValue}>
-                      #{order.id.substring(0, 8)}
-                    </span>
-                  </div>
-                  <div style={styles.orderInfoItem}>
-                    <span style={styles.orderInfoLabel}>Date Ordered</span>
-                    <span style={styles.orderInfoValue}>
-                      {new Date(order.created_at).toLocaleDateString("en-ZA", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </span>
-                  </div>
-                  <div style={styles.orderInfoItem}>
-                    <span style={styles.orderInfoLabel}>Status</span>
-                    <span style={styles.orderInfoValue}>{order.status}</span>
-                  </div>
+                  <div style={styles.orderInfoItem}><span style={styles.orderInfoLabel}>Order ID</span><span style={styles.orderInfoValue}>#{order.id.substring(0, 8)}</span></div>
+                  <div style={styles.orderInfoItem}><span style={styles.orderInfoLabel}>Date</span><span style={styles.orderInfoValue}>{new Date(order.created_at).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" })}</span></div>
                 </div>
               </div>
             </div>
 
-            <div className="study-modal-file-card" style={styles.fileCard}>
-              <div className="file-card-glow" style={styles.fileCardGlow}></div>
-              <div className="file-icon-wrapper" style={styles.fileIconWrapper}>
-                {getFileIcon(fileExtension)}
-              </div>
-              <div style={styles.fileDetails}>
-                <div style={styles.fileName}>{fileName}</div>
-                <div style={styles.fileType}>
-                  {fileExtension
-                    ? `${fileExtension.toUpperCase()} Document`
-                    : "Document File"}
-                </div>
-              </div>
+            <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '16px', padding: isMobile ? '10px' : '12px', display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)' }}>
+              <h4 style={{ margin: '8px 12px 4px', fontSize: isMobile ? '0.85rem' : '0.9rem', fontWeight: '700', color: '#475569', textTransform: 'uppercase' }}>Available Files ({validMaterials.length})</h4>
+              {validMaterials.length > 0 ? (
+                validMaterials.map((path, index) => (
+                  <div key={index} style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '12px', padding: isMobile ? '8px 10px' : '10px 12px', borderRadius: '12px', background: '#f8fafc' }}>
+                    <FaFileArchive size={isMobile ? 18 : 20} color="#0ea5e9" />
+                    <span style={{ flex: 1, minWidth: 0, fontWeight: '500', color: '#1e293b', fontSize: isMobile ? '0.85rem' : '0.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={getFileName(path)}>{getFileName(path)}</span>
+                  </div>
+                ))
+              ) : (<p style={{ textAlign: 'center', color: '#64748b', padding: '1rem', fontSize: isMobile ? '0.85rem' : '0.95rem' }}>No study materials are available for this order yet.</p>)}
             </div>
 
-            <div className="journey-container" style={styles.journeyContainer}>
+            <div style={styles.journeyContainer}>
               <div style={styles.journeyBg}></div>
               <h3 style={styles.journeyTitle}>Your Learning Journey</h3>
-              <div className="journey-visuals" style={styles.journeyVisuals}>
-                <svg
-                  width="100%"
-                  height="100%"
-                  viewBox="0 0 400 60"
-                  preserveAspectRatio="none"
-                  style={{ position: "absolute" }}
-                >
-                  <path
-                    d="M 25 30 C 100 5, 300 55, 375 30"
-                    fill="none"
-                    style={styles.journeyPath}
-                  />
+              <div style={styles.journeyVisuals}>
+                <svg style={styles.svgContainer} viewBox={isMobile ? "0 0 400 500" : "0 0 800 200"} preserveAspectRatio="xMidYMid meet">
+                  <defs><linearGradient id="pathGradient" x1="0%" y1={isMobile ? "0%" : "0%"} x2={isMobile ? "0%" : "100%"} y2={isMobile ? "100%" : "0%"}><stop offset="0%" style={{ stopColor: '#10b981', stopOpacity: 1 }} /><stop offset="50%" style={{ stopColor: '#3b82f6', stopOpacity: 1 }} /><stop offset="100%" style={{ stopColor: '#f59e0b', stopOpacity: 1 }} /></linearGradient></defs>
+                  <path d={pathData} style={styles.journeyPath}/>
+                  {circlePositions.map((pos, idx) => (<circle key={idx} cx={pos.cx} cy={pos.cy} r="8" fill={idx === 0 ? '#10b981' : idx === 1 ? '#3b82f6' : '#f59e0b'} opacity="0"><animate attributeName="opacity" values="0;1;1" dur="2s" begin={`${0.8 + idx * 0.3}s`} fill="freeze" /></circle>))}
                 </svg>
                 <div style={styles.journeyStages}>
-                  <div
-                    className="journey-stage"
-                    style={{ ...styles.journeyStage, animationDelay: "0.5s" }}
-                  >
-                    <div
-                      className="journey-icon journey-icon-enroll"
-                      style={styles.journeyIcon}
-                    >
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#3b82f6"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                        <polyline points="10 17 15 12 10 7" />
-                        <line x1="15" y1="12" x2="3" y2="12" />
-                      </svg>
-                    </div>
-                    <span className="journey-label" style={styles.journeyLabel}>
-                      Enrollment
-                    </span>
+                  <div className="journey-stage" style={styles.journeyStage}>
+                    <div className="journey-icon" style={journeyIconStyles[0]}><div style={styles.journeyIconInner}><FaBookOpen size={isMobile ? 100 : 60} color="#10b981" /></div></div>
+                    <div style={styles.journeyTextWrapper}><div className="journey-label" style={styles.journeyLabel}>Access</div><div style={styles.journeySubtext}>Download Materials</div></div>
                   </div>
-
-                  <div
-                    className="journey-stage"
-                    style={{ ...styles.journeyStage, animationDelay: "0.8s" }}
-                  >
-                    <div
-                      className="journey-icon journey-icon-skill"
-                      style={styles.journeyIcon}
-                    >
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#8b5cf6"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                        <path d="M6.5 2H20v15H6.5A2.5 2.5 0 0 1 4 14.5V4.5A2.5 2.5 0 0 1 6.5 2z" />
-                      </svg>
-                    </div>
-                    <span className="journey-label" style={styles.journeyLabel}>
-                      Skill Building
-                    </span>
+                  <div className="journey-stage" style={styles.journeyStage}>
+                    <div className="journey-icon" style={journeyIconStyles[1]}><div style={styles.journeyIconInner}><FaGraduationCap size={isMobile ? 100 : 60} color="#3b82f6" /></div></div>
+                    <div style={styles.journeyTextWrapper}><div className="journey-label" style={styles.journeyLabel}>Study</div><div style={styles.journeySubtext}>Master Concepts</div></div>
                   </div>
-
-                  <div
-                    className="journey-stage"
-                    style={{ ...styles.journeyStage, animationDelay: "1.1s" }}
-                  >
-                    <div
-                      className="journey-icon journey-icon-milestone"
-                      style={styles.journeyIcon}
-                    >
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#10b981"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                        <polyline points="22 4 12 14.01 9 11.01" />
-                      </svg>
-                    </div>
-                    <span className="journey-label" style={styles.journeyLabel}>
-                      Milestone
-                    </span>
-                  </div>
-
-                  <div
-                    className="journey-stage"
-                    style={{ ...styles.journeyStage, animationDelay: "1.4s" }}
-                  >
-                    <div
-                      className="journey-icon journey-icon-success"
-                      style={styles.journeyIcon}
-                    >
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#f59e0b"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z" />
-                      </svg>
-                    </div>
-                    <span className="journey-label" style={styles.journeyLabel}>
-                      Success
-                    </span>
+                  <div className="journey-stage" style={styles.journeyStage}>
+                    <div className="journey-icon" style={journeyIconStyles[2]}><div style={styles.journeyIconInner}><FaTrophy size={isMobile ? 100 : 60} color="#f59e0b" /></div></div>
+                    <div style={styles.journeyTextWrapper}><div className="journey-label" style={styles.journeyLabel}>Excel</div><div style={styles.journeySubtext}>Achieve Success</div></div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div
-              className="study-modal-download-section"
-              style={styles.downloadSection}
-            >
+            <div style={styles.downloadSection}>
               <div style={styles.downloadSectionGlow}></div>
-              <div style={styles.readyBadge}>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-                Ready for Download
-              </div>
-
-              <button
-                className="study-modal-download-button"
-                style={{
-                  ...styles.downloadButton,
-                  ...(isDownloading ? styles.downloadButtonDisabled : {}),
-                }}
-                onClick={handleDownloadClick}
-                disabled={isDownloading}
-                onMouseOver={(e) => {
-                  if (!isDownloading) {
-                    e.currentTarget.style.background =
-                      "linear-gradient(135deg, #0052a3 0%, #003d7a 100%)";
-                    e.currentTarget.style.transform = "translateY(-3px)";
-                    e.currentTarget.style.boxShadow =
-                      "0 12px 28px rgba(0, 102, 204, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2)";
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!isDownloading) {
-                    e.currentTarget.style.background =
-                      "linear-gradient(135deg, #0066CC 0%, #004999 100%)";
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow =
-                      "0 8px 20px rgba(0, 102, 204, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2)";
-                  }
-                }}
-              >
-                {isDownloading ? (
-                  <>
-                    <svg
-                      style={styles.spinner}
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <line x1="12" y1="2" x2="12" y2="6"></line>
-                      <line x1="12" y1="18" x2="12" y2="22"></line>
-                      <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
-                      <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
-                      <line x1="2" y1="12" x2="6" y2="12"></line>
-                      <line x1="18" y1="12" x2="22" y2="12"></line>
-                      <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
-                      <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
-                    </svg>
-                    <span>Downloading...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                      <polyline points="7 10 12 15 17 10"></polyline>
-                      <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    <span>Download Now</span>
-                  </>
-                )}
+              <div style={styles.readyBadge}><FaCheckCircle /><span>Ready for Download</span></div>
+              <button style={{ ...styles.downloadButton, ...(isDownloading ? styles.downloadButtonDisabled : {}) }} onClick={handleDownloadClick} disabled={isDownloading || validMaterials.length === 0}>
+                {isDownloading ? (<><FaSpinner style={styles.spinner} /><span>Zipping Files...</span></>) : (<><FaDownload /><span>Download All (.zip)</span></>)}
               </button>
             </div>
           </div>
@@ -9694,7 +8932,7 @@ const CourseDetailsModal = ({ course, onClose, onAddToCart }) => {
         .modal-overlay {
           position: fixed;
           inset: 0;
-          z-index: 2000; /* Increased z-index to be safe */
+          z-index: 2000;
           background-color: rgba(0, 0, 0, 0.6);
           display: flex;
           justify-content: center;
@@ -9704,14 +8942,14 @@ const CourseDetailsModal = ({ course, onClose, onAddToCart }) => {
         }
 
         .modal-dialog {
-          background: #ffffff;
+          background: #fff;
           border-radius: 18px;
           box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
           width: 100%;
           max-width: 600px;
           max-height: 90vh;
           overflow: hidden;
-          display: flex; /* Use flexbox for layout */
+          display: flex;
           flex-direction: column;
           animation: fadeInModal 0.3s ease-out forwards;
         }
@@ -9728,7 +8966,7 @@ const CourseDetailsModal = ({ course, onClose, onAddToCart }) => {
           padding: 1.5rem 2rem;
           border-bottom: 1px solid #d9dde2;
           background-color: #fdfdff;
-          flex-shrink: 0; /* Prevent header from shrinking */
+          flex-shrink: 0;
         }
 
         .modal-header h3 {
@@ -9766,7 +9004,6 @@ const CourseDetailsModal = ({ course, onClose, onAddToCart }) => {
         .modal-body {
           padding: 2rem;
           overflow-y: auto;
-          /* Let the body grow to fill available space */
           flex-grow: 1;
         }
 
@@ -9809,8 +9046,6 @@ const CourseDetailsModal = ({ course, onClose, onAddToCart }) => {
           line-height: 1.6;
           margin-bottom: 1.5rem;
           overflow-wrap: break-word;
-          word-wrap: break-word;
-          hyphens: auto;
         }
 
         .modal-body h4 {
@@ -9830,8 +9065,26 @@ const CourseDetailsModal = ({ course, onClose, onAddToCart }) => {
           line-height: 1.5;
           margin-bottom: 0.5rem;
           overflow-wrap: break-word;
-          word-wrap: break-word;
-          hyphens: auto;
+        }
+        
+        .learning-outcomes-list {
+          list-style: none;
+          padding-left: 0 !important;
+        }
+        
+        .learning-outcomes-list li {
+          padding-left: 2em;
+          position: relative;
+        }
+        
+        .learning-outcomes-list li::before {
+          content: '✓';
+          color: var(--accent-lime);
+          position: absolute;
+          left: 0;
+          top: 2px;
+          font-weight: bold;
+          font-size: 1.2rem;
         }
 
         .modal-footer {
@@ -9842,7 +9095,7 @@ const CourseDetailsModal = ({ course, onClose, onAddToCart }) => {
           justify-content: flex-end;
           align-items: center;
           gap: 1rem;
-          flex-shrink: 0; /* Prevent footer from shrinking */
+          flex-shrink: 0;
         }
 
         .modal-footer .btn {
@@ -9877,25 +9130,19 @@ const CourseDetailsModal = ({ course, onClose, onAddToCart }) => {
         .modal-footer .btn-primary:hover {
           background-color: #82b01e;
           border-color: #82b01e;
-          color: #ffffff;
+          color: #fff;
           box-shadow: 0 6px 20px -3px rgba(162, 215, 41, 0.8);
         }
 
-        /* ====================================================== */
-        /* ============ RESPONSIVE STYLES WITH 8vh MARGIN ======== */
-        /* ====================================================== */
         @media (max-width: 1024px) {
           .modal-overlay {
             align-items: flex-start;
-            /* Symmetrical 8vh top and bottom padding */
-            padding-top: 8vh;
-            padding-bottom: 8vh;
+            padding: 8vh 1rem;
           }
           
           .modal-dialog {
             max-width: 550px;
-            /* Max height is now 100% of the padded area */
-            max-height: 84vh; /* 100vh - 8vh - 8vh = 84vh */
+            max-height: 84vh;
             margin: 0 auto;
           }
           
@@ -9905,7 +9152,6 @@ const CourseDetailsModal = ({ course, onClose, onAddToCart }) => {
           
           .modal-body {
             padding: 1.5rem;
-            /* Body max-height is no longer needed as the parent dialog has it */
           }
           
           .modal-footer {
@@ -9915,45 +9161,79 @@ const CourseDetailsModal = ({ course, onClose, onAddToCart }) => {
 
         @media (max-width: 767px) {
           .modal-overlay {
-            padding: 0.5rem;
-            /* Symmetrical 8vh top and bottom padding */
-            padding-top: 4vh;
-            padding-bottom: 8vh;
+            padding: 4vh 0.5rem 8vh;
+            backdrop-filter: none;
           }
           
           .modal-dialog {
             max-width: 100%;
-            max-height: 84vh; /* 100vh - 8vh - 8vh = 84vh */
+            max-height: 88vh;
+            border-radius: 16px;
           }
           
           .modal-header {
-            padding: 1rem;
+            padding: 1rem 1.25rem;
           }
           
           .modal-header h3 {
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             max-width: calc(100% - 2.5rem);
           }
           
+          .modal-close-btn {
+            font-size: 1.3rem;
+            padding: 0.4rem;
+          }
+          
           .modal-body {
-            padding: 1rem;
+            padding: 1.25rem;
           }
           
           .course-image {
-            max-height: 200px;
+            max-height: 180px;
+            margin-bottom: 1.25rem;
           }
           
           .course-meta-details {
-            flex-direction: column;
-            gap: 0.5rem;
+            gap: 1rem;
+          }
+          
+          .course-meta-details span {
+            font-size: 0.9rem;
           }
           
           .course-price-modal {
             font-size: 1.5rem;
+            margin-bottom: 1.25rem;
+          }
+          
+          .modal-body p {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 1.25rem;
+          }
+          
+          .modal-body h4 {
+            font-size: 1rem;
+            margin: 1.25rem 0 0.6rem 0;
+          }
+          
+          .modal-body li {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin-bottom: 0.4rem;
+          }
+          
+          .learning-outcomes-list li {
+            padding-left: 1.75em;
+          }
+          
+          .learning-outcomes-list li::before {
+            font-size: 1.1rem;
           }
           
           .modal-footer {
-            padding: 1rem;
+            padding: 1rem 1.25rem;
             flex-direction: column-reverse;
             gap: 0.75rem;
           }
@@ -9961,16 +9241,42 @@ const CourseDetailsModal = ({ course, onClose, onAddToCart }) => {
           .modal-footer .btn {
             width: 100%;
             justify-content: center;
+            padding: 0.7rem 1.25rem;
           }
         }
 
         @media (max-width: 480px) {
+          .modal-dialog {
+            border-radius: 14px;
+          }
+          
           .modal-header h3 {
             font-size: 1.1rem;
           }
           
+          .modal-body {
+            padding: 1rem;
+          }
+          
+          .course-image {
+            max-height: 160px;
+            border-radius: 5px;
+          }
+          
           .course-price-modal {
-            font-size: 1.25rem;
+            font-size: 1.35rem;
+          }
+          
+          .modal-body p {
+            font-size: 0.9rem;
+          }
+          
+          .modal-body li {
+            font-size: 0.85rem;
+          }
+          
+          .modal-footer {
+            padding: 0.9rem 1rem;
           }
         }
       `}</style>
@@ -10007,7 +9313,7 @@ const CourseDetailsModal = ({ course, onClose, onAddToCart }) => {
               course.learning_outcomes.length > 0 && (
                 <>
                   <h4>Learning Outcomes:</h4>
-                  <ul>
+                  <ul className="learning-outcomes-list">
                     {course.learning_outcomes.map((outcome, index) => (
                       <li key={index}>{outcome}</li>
                     ))}
@@ -10119,9 +9425,6 @@ const CartPanel = ({
                 />
                 <div className="cart-item-details">
                   <h5>{item.title}</h5>
-                  {/* ====================================================== */}
-                  {/* ====== 2. UPDATE JSX TO INCLUDE QUANTITY DISPLAY ======= */}
-                  {/* ====================================================== */}
                   <div className="cart-item-meta">
                     <div className="cart-item-price">
                       {formatCurrency(item.price)}
@@ -10130,9 +9433,6 @@ const CartPanel = ({
                       Qty: {item.quantity}
                     </span>
                   </div>
-                  {/* ====================================================== */}
-                  {/* =================== END OF CHANGE ==================== */}
-                  {/* ====================================================== */}
                 </div>
                 <button
                   className="cart-item-remove"
