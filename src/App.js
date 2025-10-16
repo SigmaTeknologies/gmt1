@@ -7644,8 +7644,8 @@ const StudyMaterialModal = ({
     },
     journeyContainer: {
       background: isMobile
-        ? "#fafafa"
-        : "linear-gradient(135deg, #ffffff 0%, #fafafa 100%)",
+        ? "#ffffff"
+        : "linear-gradient(135deg, #ffffff 0%, #ffffff 100%)",
       borderRadius: "20px",
       padding: isMobile ? "28px 20px" : "40px 32px",
       border: "1px solid #e2e8f0",
