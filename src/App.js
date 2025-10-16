@@ -7642,22 +7642,23 @@ const StudyMaterialModal = ({
       color: "#075985",
       fontWeight: "600",
     },
-    journeyContainer: {
-      background: isMobile
-        ? "#ffffff"
-        : "linear-gradient(135deg, #ffffff 0%, #ffffff 100%)",
-      borderRadius: "20px",
-      padding: isMobile ? "28px 20px" : "40px 32px",
-      border: "1px solid #e2e8f0",
-      boxShadow: "0 4px 16px rgba(0, 0, 0, 0.06)",
-      flex: 1,
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      position: "relative",
-      overflow: "hidden",
-      minHeight: isMobile ? "450px" : "350px",
-    },
+    // Change the journeyContainer style to remove flex: 1
+journeyContainer: {
+  background: isMobile
+    ? "#ffffff"
+    : "linear-gradient(135deg, #ffffff 0%, #ffffff 100%)",
+  borderRadius: "20px",
+  padding: isMobile ? "28px 20px" : "40px 32px",
+  border: "1px solid #e2e8f0",
+  boxShadow: "0 4px 16px rgba(0, 0, 0, 0.06)",
+  // Remove or comment out: flex: 1,
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
+  position: "relative",
+  overflow: "hidden",
+  minHeight: isMobile ? "450px" : "350px",
+},
     journeyBg: {
       position: "absolute",
       top: 0,
