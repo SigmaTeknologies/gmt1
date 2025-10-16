@@ -69,6 +69,7 @@ import { FaChevronDown } from "react-icons/fa6";
 import Lottie from "lottie-react";
 import JSZip from "jszip";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { Analytics } from "@vercel/analytics/react";
 
 // NOTE: Hardcoded data import has been removed.
 // All data is now fetched from Supabase.
@@ -1288,6 +1289,7 @@ function App() {
         onCheckout={handleCheckout}
       />
       <SpeedInsights />
+      <Analytics />
     </>
   );
 }
@@ -5810,7 +5812,6 @@ const AccountSection = ({
   );
 };
 
-// Simple PasswordStrengthMeter component
 const PasswordStrengthMeter = ({ password }) => {
   // --- Simplified Password Analysis ---
   const analysis = useMemo(() => {
@@ -7446,7 +7447,13 @@ const OrderRow = ({ order }) => {
   );
 };
 
-const StudyMaterialModal = ({ isOpen, onClose, order, onDownload, isDownloading }) => {
+const StudyMaterialModal = ({
+  isOpen,
+  onClose,
+  order,
+  onDownload,
+  isDownloading,
+}) => {
   if (!isOpen) return null;
 
   const [isMobile, setIsMobile] = useState(false);
@@ -7454,17 +7461,20 @@ const StudyMaterialModal = ({ isOpen, onClose, order, onDownload, isDownloading 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 768);
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   const getFileName = (filePath) => {
-    if (typeof filePath !== 'string' || !filePath) {
-      return 'Invalid File Path';
+    if (typeof filePath !== "string" || !filePath) {
+      return "Invalid File Path";
     }
-    const fileName = filePath.split('/').pop();
+    const fileName = filePath.split("/").pop();
     // Removes a UUID-like prefix if it exists
-    return fileName.replace(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}_/, '');
+    return fileName.replace(
+      /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}_/,
+      ""
+    );
   };
 
   const handleDownloadClick = () => {
@@ -7473,9 +7483,9 @@ const StudyMaterialModal = ({ isOpen, onClose, order, onDownload, isDownloading 
 
   const materials = Array.isArray(order.study_material_path)
     ? order.study_material_path
-    : (typeof order.study_material_path === 'string' && order.study_material_path)
-      ? [order.study_material_path]
-      : [];
+    : typeof order.study_material_path === "string" && order.study_material_path
+    ? [order.study_material_path]
+    : [];
 
   const validMaterials = materials.filter(Boolean);
 
@@ -7484,197 +7494,363 @@ const StudyMaterialModal = ({ isOpen, onClose, order, onDownload, isDownloading 
 
   const styles = {
     overlay: {
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.75)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 10000, padding: 0,
-      animation: 'fadeIn 0.3s ease',
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0, 0, 0, 0.75)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 10000,
+      padding: 0,
+      animation: "fadeIn 0.3s ease",
     },
     modal: {
-      backgroundColor: '#f8fafc',
+      backgroundColor: "#f8fafc",
       backgroundImage: svgBgPattern,
-      width: '100%', height: '100%',
-      display: 'flex', flexDirection: 'column', position: 'relative',
-      boxShadow: '0 15px 50px -10px rgba(0, 0, 0, 0.3)',
-      animation: 'slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-      overflow: 'hidden',
+      width: "100%",
+      height: "100%",
+      display: "flex",
+      flexDirection: "column",
+      position: "relative",
+      boxShadow: "0 15px 50px -10px rgba(0, 0, 0, 0.3)",
+      animation: "slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
+      overflow: "hidden",
     },
     header: {
-      background: isMobile ? '#004999' : 'linear-gradient(135deg, #0066CC 0%, #004999 50%, #003366 100%)',
-      padding: isMobile ? '24px 20px' : '32px 28px',
-      position: 'relative', overflow: 'hidden', flexShrink: 0,
+      background: isMobile
+        ? "#004999"
+        : "linear-gradient(135deg, #0066CC 0%, #004999 50%, #003366 100%)",
+      padding: isMobile ? "24px 20px" : "32px 28px",
+      position: "relative",
+      overflow: "hidden",
+      flexShrink: 0,
     },
     decorativePattern: {
-      position: 'absolute', top: 0, right: 0, width: '100%', height: '100%', opacity: 0.06,
+      position: "absolute",
+      top: 0,
+      right: 0,
+      width: "100%",
+      height: "100%",
+      opacity: 0.06,
       backgroundImage: `radial-gradient(circle at 20% 50%, rgba(255,255,255,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%)`,
     },
     closeButton: {
-      position: 'absolute', top: isMobile ? '12px' : '20px', right: isMobile ? '12px' : '20px',
-      background: 'rgba(255, 255, 255, 0.12)',
-      border: '1px solid rgba(255, 255, 255, 0.25)', fontSize: '1.1rem',
-      cursor: 'pointer', color: '#ffffff', padding: '0.5rem',
-      borderRadius: '12px', transition: 'transform 0.3s ease',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      width: '40px', height: '40px', zIndex: 2,
+      position: "absolute",
+      top: isMobile ? "12px" : "20px",
+      right: isMobile ? "12px" : "20px",
+      background: "rgba(255, 255, 255, 0.12)",
+      border: "1px solid rgba(255, 255, 255, 0.25)",
+      fontSize: "1.1rem",
+      cursor: "pointer",
+      color: "#ffffff",
+      padding: "0.5rem",
+      borderRadius: "12px",
+      transition: "transform 0.3s ease",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: "40px",
+      height: "40px",
+      zIndex: 2,
     },
-    headerContent: { position: 'relative', zIndex: 1 },
+    headerContent: { position: "relative", zIndex: 1 },
     iconWrapper: {
-      width: isMobile ? '52px' : '64px', height: isMobile ? '52px' : '64px',
-      background: 'rgba(255, 255, 255, 0.15)',
-      borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      marginBottom: isMobile ? '12px' : '16px', border: '1px solid rgba(255, 255, 255, 0.25)',
-      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-      animation: 'float 3s ease-in-out infinite',
+      width: isMobile ? "52px" : "64px",
+      height: isMobile ? "52px" : "64px",
+      background: "rgba(255, 255, 255, 0.15)",
+      borderRadius: "18px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: isMobile ? "12px" : "16px",
+      border: "1px solid rgba(255, 255, 255, 0.25)",
+      boxShadow:
+        "0 8px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
+      animation: "float 3s ease-in-out infinite",
     },
     title: {
-      fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: '800', color: '#ffffff',
-      marginBottom: '8px', lineHeight: '1.2', textAlign: 'left',
-      fontFamily: "'Montserrat', 'Inter', sans-serif", letterSpacing: '-0.02em',
-      textShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+      fontSize: isMobile ? "1.5rem" : "2rem",
+      fontWeight: "800",
+      color: "#ffffff",
+      marginBottom: "8px",
+      lineHeight: "1.2",
+      textAlign: "left",
+      fontFamily: "'Montserrat', 'Inter', sans-serif",
+      letterSpacing: "-0.02em",
+      textShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
     },
     subtitle: {
-      fontSize: isMobile ? '0.85rem' : '0.95rem', color: 'rgba(255, 255, 255, 0.92)',
-      fontWeight: '500', margin: 0, lineHeight: '1.5', textAlign: 'left', maxWidth: '90%',
+      fontSize: isMobile ? "0.85rem" : "0.95rem",
+      color: "rgba(255, 255, 255, 0.92)",
+      fontWeight: "500",
+      margin: 0,
+      lineHeight: "1.5",
+      textAlign: "left",
+      maxWidth: "90%",
     },
     body: {
-      padding: isMobile ? '20px 16px' : '28px', flex: 1, overflowY: 'auto',
-      display: 'flex', flexDirection: 'column', gap: isMobile ? '20px' : '24px',
+      padding: isMobile ? "20px 16px" : "28px",
+      flex: 1,
+      overflowY: "auto",
+      display: "flex",
+      flexDirection: "column",
+      gap: isMobile ? "20px" : "24px",
     },
     orderInfoCard: {
-      background: isMobile ? '#e0f2fe' : 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-      padding: isMobile ? '18px' : '22px', borderRadius: '16px',
-      border: '1px solid #bae6fd', position: 'relative', overflow: 'hidden',
-      boxShadow: '0 4px 12px rgba(14, 165, 233, 0.08)',
+      background: isMobile
+        ? "#e0f2fe"
+        : "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)",
+      padding: isMobile ? "18px" : "22px",
+      borderRadius: "16px",
+      border: "1px solid #bae6fd",
+      position: "relative",
+      overflow: "hidden",
+      boxShadow: "0 4px 12px rgba(14, 165, 233, 0.08)",
     },
-    orderInfoContent: { position: 'relative', zIndex: 1 },
+    orderInfoContent: { position: "relative", zIndex: 1 },
     orderInfoTitle: {
-      fontSize: '0.7rem', fontWeight: '700', color: '#0369a1',
-      marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.1em',
-      display: 'flex', alignItems: 'center', gap: '8px',
+      fontSize: "0.7rem",
+      fontWeight: "700",
+      color: "#0369a1",
+      marginBottom: "12px",
+      textTransform: "uppercase",
+      letterSpacing: "0.1em",
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
     },
     orderInfoGrid: {
-      display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(140px, 1fr))',
-      gap: '12px',
+      display: "grid",
+      gridTemplateColumns: isMobile
+        ? "1fr"
+        : "repeat(auto-fit, minmax(140px, 1fr))",
+      gap: "12px",
     },
-    orderInfoItem: { display: 'flex', flexDirection: 'column', gap: '5px' },
+    orderInfoItem: { display: "flex", flexDirection: "column", gap: "5px" },
     orderInfoLabel: {
-      fontSize: '0.7rem', color: '#0369a1', fontWeight: '600',
-      textTransform: 'uppercase', letterSpacing: '0.05em',
+      fontSize: "0.7rem",
+      color: "#0369a1",
+      fontWeight: "600",
+      textTransform: "uppercase",
+      letterSpacing: "0.05em",
     },
-    orderInfoValue: { fontSize: '0.95rem', color: '#075985', fontWeight: '600' },
+    orderInfoValue: {
+      fontSize: "0.95rem",
+      color: "#075985",
+      fontWeight: "600",
+    },
     journeyContainer: {
-      background: isMobile ? '#fafafa' : 'linear-gradient(135deg, #ffffff 0%, #fafafa 100%)',
-      borderRadius: '20px', padding: isMobile ? '28px 20px' : '40px 32px',
-      border: '1px solid #e2e8f0', boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
-      flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center',
-      position: 'relative', overflow: 'hidden', minHeight: isMobile ? '450px' : '350px',
+      background: isMobile
+        ? "#fafafa"
+        : "linear-gradient(135deg, #ffffff 0%, #fafafa 100%)",
+      borderRadius: "20px",
+      padding: isMobile ? "28px 20px" : "40px 32px",
+      border: "1px solid #e2e8f0",
+      boxShadow: "0 4px 16px rgba(0, 0, 0, 0.06)",
+      flex: 1,
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      position: "relative",
+      overflow: "hidden",
+      minHeight: isMobile ? "450px" : "350px",
     },
     journeyBg: {
-      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.04,
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      opacity: 0.04,
       backgroundImage: `radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.4) 0%, transparent 50%), radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.4) 0%, transparent 50%)`,
-      pointerEvents: 'none',
+      pointerEvents: "none",
     },
     journeyTitle: {
-      textAlign: 'center', fontSize: isMobile ? '1.15rem' : '1.3rem',
-      fontWeight: '700', color: '#1e293b', marginBottom: isMobile ? '32px' : '48px',
-      fontFamily: "'Montserrat', 'Inter', sans-serif", position: 'relative',
-      zIndex: 1, letterSpacing: '-0.01em',
+      textAlign: "center",
+      fontSize: isMobile ? "1.15rem" : "1.3rem",
+      fontWeight: "700",
+      color: "#1e293b",
+      marginBottom: isMobile ? "32px" : "48px",
+      fontFamily: "'Montserrat', 'Inter', sans-serif",
+      position: "relative",
+      zIndex: 1,
+      letterSpacing: "-0.01em",
     },
     journeyVisuals: {
-      position: 'relative', minHeight: isMobile ? '380px' : '240px',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1,
+      position: "relative",
+      minHeight: isMobile ? "380px" : "240px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1,
     },
     svgContainer: {
-      position: 'absolute', top: '50%', left: '50%',
-      transform: 'translate(-50%, -50%)', width: '100%', height: '100%',
-      pointerEvents: 'none',
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      width: "100%",
+      height: "100%",
+      pointerEvents: "none",
     },
     journeyPath: {
-      stroke: 'url(#pathGradient)', strokeWidth: isMobile ? '2.5' : '3',
-      fill: 'none', strokeDasharray: 1500, strokeDashoffset: 1500,
-      animation: 'drawPath 2.5s ease-out 0.5s forwards',
+      stroke: "url(#pathGradient)",
+      strokeWidth: isMobile ? "2.5" : "3",
+      fill: "none",
+      strokeDasharray: 1500,
+      strokeDashoffset: 1500,
+      animation: "drawPath 2.5s ease-out 0.5s forwards",
     },
     journeyStages: {
-      position: 'relative', display: 'flex',
-      flexDirection: isMobile ? 'column' : 'row',
-      justifyContent: isMobile ? 'center' : 'space-between',
-      alignItems: 'center', zIndex: 2, padding: isMobile ? '0' : '0 20px',
-      gap: isMobile ? '48px' : '0',
+      position: "relative",
+      display: "flex",
+      flexDirection: isMobile ? "column" : "row",
+      justifyContent: isMobile ? "center" : "space-between",
+      alignItems: "center",
+      zIndex: 2,
+      padding: isMobile ? "0" : "0 20px",
+      gap: isMobile ? "48px" : "0",
     },
     journeyStage: {
-      display: 'flex', flexDirection: isMobile ? 'row' : 'column',
-      alignItems: 'center', gap: isMobile ? '20px' : '16px',
-      textAlign: isMobile ? 'left' : 'center',
-      opacity: 0, transform: 'translateY(20px)',
-      cursor: 'pointer', transition: 'transform 0.3s ease',
-      position: 'relative', width: isMobile ? '100%' : 'auto',
-      maxWidth: isMobile ? '280px' : 'none',
+      display: "flex",
+      flexDirection: isMobile ? "row" : "column",
+      alignItems: "center",
+      gap: isMobile ? "20px" : "16px",
+      textAlign: isMobile ? "left" : "center",
+      opacity: 0,
+      transform: "translateY(20px)",
+      cursor: "pointer",
+      transition: "transform 0.3s ease",
+      position: "relative",
+      width: isMobile ? "100%" : "auto",
+      maxWidth: isMobile ? "280px" : "none",
     },
     journeyIcon: {
-      width: isMobile ? '168px' : '172px', height: isMobile ? '168px' : '172px',
-      borderRadius: '50%', flexShrink: 0,
-      border: '3px solid #e2e8f0', display: 'flex', alignItems: 'center',
-      justifyContent: 'center', transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1), inset 0 -2px 8px rgba(0, 0, 0, 0.05)',
-      position: 'relative', zIndex: 2,
+      width: isMobile ? "168px" : "172px",
+      height: isMobile ? "168px" : "172px",
+      borderRadius: "50%",
+      flexShrink: 0,
+      border: "3px solid #e2e8f0",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      transition: "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
+      boxShadow:
+        "0 8px 24px rgba(0, 0, 0, 0.1), inset 0 -2px 8px rgba(0, 0, 0, 0.05)",
+      position: "relative",
+      zIndex: 2,
     },
     journeyIconInner: {
-      width: '100%', height: '100%', borderRadius: '50%',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), transparent)',
+      width: "100%",
+      height: "100%",
+      borderRadius: "50%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background:
+        "radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), transparent)",
     },
     journeyTextWrapper: {
-      display: 'flex', flexDirection: 'column',
-      alignItems: isMobile ? 'flex-start' : 'center',
-      flex: isMobile ? 1 : 'none',
+      display: "flex",
+      flexDirection: "column",
+      alignItems: isMobile ? "flex-start" : "center",
+      flex: isMobile ? 1 : "none",
     },
     journeyLabel: {
-      fontSize: isMobile ? '0.95rem' : '0.85rem', fontWeight: '700', color: '#475569',
-      transition: 'color 0.3s ease', maxWidth: isMobile ? 'none' : '110px',
-      lineHeight: '1.3', textTransform: 'uppercase', letterSpacing: '0.03em',
+      fontSize: isMobile ? "0.95rem" : "0.85rem",
+      fontWeight: "700",
+      color: "#475569",
+      transition: "color 0.3s ease",
+      maxWidth: isMobile ? "none" : "110px",
+      lineHeight: "1.3",
+      textTransform: "uppercase",
+      letterSpacing: "0.03em",
     },
     journeySubtext: {
-      fontSize: isMobile ? '0.75rem' : '0.7rem', color: '#94a3b8',
-      fontWeight: '500', marginTop: '4px',
+      fontSize: isMobile ? "0.75rem" : "0.7rem",
+      color: "#94a3b8",
+      fontWeight: "500",
+      marginTop: "4px",
     },
     downloadSection: {
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      gap: isMobile ? '12px' : '16px', padding: isMobile ? '20px 16px' : '24px',
-      background: isMobile ? '#fef3c7' : 'linear-gradient(135deg, #fefce8 0%, #fef3c7 100%)',
-      borderRadius: '16px', border: '1px solid #fde047', marginTop: 'auto',
-      boxShadow: '0 4px 12px rgba(250, 204, 21, 0.15)', position: 'relative',
-      overflow: 'hidden',
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: isMobile ? "12px" : "16px",
+      padding: isMobile ? "20px 16px" : "24px",
+      background: isMobile
+        ? "#fef3c7"
+        : "linear-gradient(135deg, #fefce8 0%, #fef3c7 100%)",
+      borderRadius: "16px",
+      border: "1px solid #fde047",
+      marginTop: "auto",
+      boxShadow: "0 4px 12px rgba(250, 204, 21, 0.15)",
+      position: "relative",
+      overflow: "hidden",
     },
     downloadSectionGlow: {
-      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'radial-gradient(ellipse at center, rgba(250, 204, 21, 0.1) 0%, transparent 70%)',
-      pointerEvents: 'none',
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background:
+        "radial-gradient(ellipse at center, rgba(250, 204, 21, 0.1) 0%, transparent 70%)",
+      pointerEvents: "none",
     },
     readyBadge: {
-      display: 'flex', alignItems: 'center', gap: '8px',
-      padding: isMobile ? '6px 14px' : '8px 16px',
-      background: '#dcfce7', color: '#166534', borderRadius: '12px',
-      fontSize: isMobile ? '0.75rem' : '0.8rem', fontWeight: '600',
-      border: '1px solid #86efac', boxShadow: '0 2px 6px rgba(22, 101, 52, 0.1)',
-      position: 'relative', zIndex: 1, animation: 'pulse 2.5s ease-in-out infinite',
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      padding: isMobile ? "6px 14px" : "8px 16px",
+      background: "#dcfce7",
+      color: "#166534",
+      borderRadius: "12px",
+      fontSize: isMobile ? "0.75rem" : "0.8rem",
+      fontWeight: "600",
+      border: "1px solid #86efac",
+      boxShadow: "0 2px 6px rgba(22, 101, 52, 0.1)",
+      position: "relative",
+      zIndex: 1,
+      animation: "pulse 2.5s ease-in-out infinite",
     },
     downloadButton: {
-      display: 'inline-flex', alignItems: 'center', gap: isMobile ? '10px' : '12px',
-      padding: isMobile ? '14px 32px' : '16px 40px',
-      background: isMobile ? '#004999' : 'linear-gradient(135deg, #0066CC 0%, #004999 100%)',
-      color: '#ffffff', border: 'none', borderRadius: '14px',
-      fontSize: isMobile ? '0.9rem' : '1rem', fontWeight: '700',
-      cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-      boxShadow: '0 8px 20px rgba(0, 102, 204, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-      minWidth: isMobile ? '200px' : '220px', justifyContent: 'center',
-      fontFamily: "'Montserrat', 'Inter', sans-serif", textTransform: 'uppercase',
-      letterSpacing: '0.05em', position: 'relative', zIndex: 1, overflow: 'hidden',
+      display: "inline-flex",
+      alignItems: "center",
+      gap: isMobile ? "10px" : "12px",
+      padding: isMobile ? "14px 32px" : "16px 40px",
+      background: isMobile
+        ? "#004999"
+        : "linear-gradient(135deg, #0066CC 0%, #004999 100%)",
+      color: "#ffffff",
+      border: "none",
+      borderRadius: "14px",
+      fontSize: isMobile ? "0.9rem" : "1rem",
+      fontWeight: "700",
+      cursor: "pointer",
+      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+      boxShadow:
+        "0 8px 20px rgba(0, 102, 204, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
+      minWidth: isMobile ? "200px" : "220px",
+      justifyContent: "center",
+      fontFamily: "'Montserrat', 'Inter', sans-serif",
+      textTransform: "uppercase",
+      letterSpacing: "0.05em",
+      position: "relative",
+      zIndex: 1,
+      overflow: "hidden",
     },
     downloadButtonDisabled: {
-      background: isMobile ? '#64748b' : 'linear-gradient(135deg, #94a3b8 0%, #64748b 100%)',
-      cursor: 'not-allowed', boxShadow: '0 4px 12px rgba(148, 163, 184, 0.25)',
+      background: isMobile
+        ? "#64748b"
+        : "linear-gradient(135deg, #94a3b8 0%, #64748b 100%)",
+      cursor: "not-allowed",
+      boxShadow: "0 4px 12px rgba(148, 163, 184, 0.25)",
     },
-    spinner: { animation: 'spin 1s linear infinite', display: 'inline-block' },
+    spinner: { animation: "spin 1s linear infinite", display: "inline-block" },
   };
 
   const styleSheet = `
@@ -7705,14 +7881,44 @@ const StudyMaterialModal = ({ isOpen, onClose, order, onDownload, isDownloading 
   `;
 
   // Mobile path is shifted left. Desktop path is unchanged.
-  const pathData = isMobile ? "M 180 50 Q 200 150, 180 250 T 180 450" : "M 100 100 Q 250 60, 400 100 T 700 100";
+  const pathData = isMobile
+    ? "M 180 50 Q 200 150, 180 250 T 180 450"
+    : "M 100 100 Q 250 60, 400 100 T 700 100";
   // Mobile circle positions are also shifted left to match the path.
-  const circlePositions = isMobile ? [{ cx: 180, cy: 50 }, { cx: 180, cy: 250 }, { cx: 180, cy: 450 }] : [{ cx: 100, cy: 100 }, { cx: 400, cy: 100 }, { cx: 700, cy: 100 }];
-  
+  const circlePositions = isMobile
+    ? [
+        { cx: 180, cy: 50 },
+        { cx: 180, cy: 250 },
+        { cx: 180, cy: 450 },
+      ]
+    : [
+        { cx: 100, cy: 100 },
+        { cx: 400, cy: 100 },
+        { cx: 700, cy: 100 },
+      ];
+
   const journeyIconStyles = [
-    { ...styles.journeyIcon, borderColor: '#10b981', background: isMobile ? '#d1fae5' : 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)' },
-    { ...styles.journeyIcon, borderColor: '#3b82f6', background: isMobile ? '#dbeafe' : 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' },
-    { ...styles.journeyIcon, borderColor: '#f59e0b', background: isMobile ? '#fef3c7' : 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)' },
+    {
+      ...styles.journeyIcon,
+      borderColor: "#10b981",
+      background: isMobile
+        ? "#d1fae5"
+        : "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
+    },
+    {
+      ...styles.journeyIcon,
+      borderColor: "#3b82f6",
+      background: isMobile
+        ? "#dbeafe"
+        : "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
+    },
+    {
+      ...styles.journeyIcon,
+      borderColor: "#f59e0b",
+      background: isMobile
+        ? "#fef3c7"
+        : "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)",
+    },
   ];
 
   return (
@@ -7725,14 +7931,24 @@ const StudyMaterialModal = ({ isOpen, onClose, order, onDownload, isDownloading 
             <button
               style={styles.closeButton}
               onClick={onClose}
-              onMouseOver={(e) => { e.currentTarget.style.transform = "rotate(90deg)"; }}
-              onMouseOut={(e) => { e.currentTarget.style.transform = "rotate(0deg)"; }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = "rotate(90deg)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = "rotate(0deg)";
+              }}
               aria-label="Close modal"
-            >✕</button>
+            >
+              ✕
+            </button>
             <div style={styles.headerContent}>
-              <div style={styles.iconWrapper}><FaBookOpen size={isMobile ? 26 : 32} color="#ffffff" /></div>
+              <div style={styles.iconWrapper}>
+                <FaBookOpen size={isMobile ? 26 : 32} color="#ffffff" />
+              </div>
               <h2 style={styles.title}>Study Material</h2>
-              <p style={styles.subtitle}>Your comprehensive learning resources are ready for download.</p>
+              <p style={styles.subtitle}>
+                Your comprehensive learning resources are ready for download.
+              </p>
             </div>
           </div>
 
@@ -7740,59 +7956,261 @@ const StudyMaterialModal = ({ isOpen, onClose, order, onDownload, isDownloading 
             <div style={styles.orderInfoCard}>
               <div style={styles.orderInfoContent}>
                 <div style={styles.orderInfoTitle}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect
+                      x="1"
+                      y="4"
+                      width="22"
+                      height="16"
+                      rx="2"
+                      ry="2"
+                    ></rect>
+                    <line x1="1" y1="10" x2="23" y2="10"></line>
+                  </svg>
                   Order Information
                 </div>
                 <div style={styles.orderInfoGrid}>
-                  <div style={styles.orderInfoItem}><span style={styles.orderInfoLabel}>Order ID</span><span style={styles.orderInfoValue}>#{order.id.substring(0, 8)}</span></div>
-                  <div style={styles.orderInfoItem}><span style={styles.orderInfoLabel}>Date</span><span style={styles.orderInfoValue}>{new Date(order.created_at).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" })}</span></div>
+                  <div style={styles.orderInfoItem}>
+                    <span style={styles.orderInfoLabel}>Order ID</span>
+                    <span style={styles.orderInfoValue}>
+                      #{order.id.substring(0, 8)}
+                    </span>
+                  </div>
+                  <div style={styles.orderInfoItem}>
+                    <span style={styles.orderInfoLabel}>Date</span>
+                    <span style={styles.orderInfoValue}>
+                      {new Date(order.created_at).toLocaleDateString("en-ZA", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '16px', padding: isMobile ? '10px' : '12px', display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)' }}>
-              <h4 style={{ margin: '8px 12px 4px', fontSize: isMobile ? '0.85rem' : '0.9rem', fontWeight: '700', color: '#475569', textTransform: 'uppercase' }}>Available Files ({validMaterials.length})</h4>
+            <div
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e5e7eb",
+                borderRadius: "16px",
+                padding: isMobile ? "10px" : "12px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
+              }}
+            >
+              <h4
+                style={{
+                  margin: "8px 12px 4px",
+                  fontSize: isMobile ? "0.85rem" : "0.9rem",
+                  fontWeight: "700",
+                  color: "#475569",
+                  textTransform: "uppercase",
+                }}
+              >
+                Available Files ({validMaterials.length})
+              </h4>
               {validMaterials.length > 0 ? (
                 validMaterials.map((path, index) => (
-                  <div key={index} style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '12px', padding: isMobile ? '8px 10px' : '10px 12px', borderRadius: '12px', background: '#f8fafc' }}>
+                  <div
+                    key={index}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: isMobile ? "10px" : "12px",
+                      padding: isMobile ? "8px 10px" : "10px 12px",
+                      borderRadius: "12px",
+                      background: "#f8fafc",
+                    }}
+                  >
                     <FaFileArchive size={isMobile ? 18 : 20} color="#0ea5e9" />
-                    <span style={{ flex: 1, minWidth: 0, fontWeight: '500', color: '#1e293b', fontSize: isMobile ? '0.85rem' : '0.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={getFileName(path)}>{getFileName(path)}</span>
+                    <span
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        fontWeight: "500",
+                        color: "#1e293b",
+                        fontSize: isMobile ? "0.85rem" : "0.95rem",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                      title={getFileName(path)}
+                    >
+                      {getFileName(path)}
+                    </span>
                   </div>
                 ))
-              ) : (<p style={{ textAlign: 'center', color: '#64748b', padding: '1rem', fontSize: isMobile ? '0.85rem' : '0.95rem' }}>No study materials are available for this order yet.</p>)}
+              ) : (
+                <p
+                  style={{
+                    textAlign: "center",
+                    color: "#64748b",
+                    padding: "1rem",
+                    fontSize: isMobile ? "0.85rem" : "0.95rem",
+                  }}
+                >
+                  No study materials are available for this order yet.
+                </p>
+              )}
             </div>
 
             <div style={styles.journeyContainer}>
               <div style={styles.journeyBg}></div>
               <h3 style={styles.journeyTitle}>Your Learning Journey</h3>
               <div style={styles.journeyVisuals}>
-                <svg style={styles.svgContainer} viewBox={isMobile ? "0 0 400 500" : "0 0 800 200"} preserveAspectRatio="xMidYMid meet">
-                  <defs><linearGradient id="pathGradient" x1="0%" y1={isMobile ? "0%" : "0%"} x2={isMobile ? "0%" : "100%"} y2={isMobile ? "100%" : "0%"}><stop offset="0%" style={{ stopColor: '#10b981', stopOpacity: 1 }} /><stop offset="50%" style={{ stopColor: '#3b82f6', stopOpacity: 1 }} /><stop offset="100%" style={{ stopColor: '#f59e0b', stopOpacity: 1 }} /></linearGradient></defs>
-                  <path d={pathData} style={styles.journeyPath}/>
-                  {circlePositions.map((pos, idx) => (<circle key={idx} cx={pos.cx} cy={pos.cy} r="8" fill={idx === 0 ? '#10b981' : idx === 1 ? '#3b82f6' : '#f59e0b'} opacity="0"><animate attributeName="opacity" values="0;1;1" dur="2s" begin={`${0.8 + idx * 0.3}s`} fill="freeze" /></circle>))}
+                <svg
+                  style={styles.svgContainer}
+                  viewBox={isMobile ? "0 0 400 500" : "0 0 800 200"}
+                  preserveAspectRatio="xMidYMid meet"
+                >
+                  <defs>
+                    <linearGradient
+                      id="pathGradient"
+                      x1="0%"
+                      y1={isMobile ? "0%" : "0%"}
+                      x2={isMobile ? "0%" : "100%"}
+                      y2={isMobile ? "100%" : "0%"}
+                    >
+                      <stop
+                        offset="0%"
+                        style={{ stopColor: "#10b981", stopOpacity: 1 }}
+                      />
+                      <stop
+                        offset="50%"
+                        style={{ stopColor: "#3b82f6", stopOpacity: 1 }}
+                      />
+                      <stop
+                        offset="100%"
+                        style={{ stopColor: "#f59e0b", stopOpacity: 1 }}
+                      />
+                    </linearGradient>
+                  </defs>
+                  <path d={pathData} style={styles.journeyPath} />
+                  {circlePositions.map((pos, idx) => (
+                    <circle
+                      key={idx}
+                      cx={pos.cx}
+                      cy={pos.cy}
+                      r="8"
+                      fill={
+                        idx === 0
+                          ? "#10b981"
+                          : idx === 1
+                          ? "#3b82f6"
+                          : "#f59e0b"
+                      }
+                      opacity="0"
+                    >
+                      <animate
+                        attributeName="opacity"
+                        values="0;1;1"
+                        dur="2s"
+                        begin={`${0.8 + idx * 0.3}s`}
+                        fill="freeze"
+                      />
+                    </circle>
+                  ))}
                 </svg>
                 <div style={styles.journeyStages}>
                   <div className="journey-stage" style={styles.journeyStage}>
-                    <div className="journey-icon" style={journeyIconStyles[0]}><div style={styles.journeyIconInner}><FaBookOpen size={isMobile ? 100 : 60} color="#10b981" /></div></div>
-                    <div style={styles.journeyTextWrapper}><div className="journey-label" style={styles.journeyLabel}>Access</div><div style={styles.journeySubtext}>Download Materials</div></div>
+                    <div className="journey-icon" style={journeyIconStyles[0]}>
+                      <div style={styles.journeyIconInner}>
+                        <FaBookOpen
+                          size={isMobile ? 100 : 60}
+                          color="#10b981"
+                        />
+                      </div>
+                    </div>
+                    <div style={styles.journeyTextWrapper}>
+                      <div
+                        className="journey-label"
+                        style={styles.journeyLabel}
+                      >
+                        Access
+                      </div>
+                      <div style={styles.journeySubtext}>
+                        Download Materials
+                      </div>
+                    </div>
                   </div>
                   <div className="journey-stage" style={styles.journeyStage}>
-                    <div className="journey-icon" style={journeyIconStyles[1]}><div style={styles.journeyIconInner}><FaGraduationCap size={isMobile ? 100 : 60} color="#3b82f6" /></div></div>
-                    <div style={styles.journeyTextWrapper}><div className="journey-label" style={styles.journeyLabel}>Study</div><div style={styles.journeySubtext}>Master Concepts</div></div>
+                    <div className="journey-icon" style={journeyIconStyles[1]}>
+                      <div style={styles.journeyIconInner}>
+                        <FaGraduationCap
+                          size={isMobile ? 100 : 60}
+                          color="#3b82f6"
+                        />
+                      </div>
+                    </div>
+                    <div style={styles.journeyTextWrapper}>
+                      <div
+                        className="journey-label"
+                        style={styles.journeyLabel}
+                      >
+                        Study
+                      </div>
+                      <div style={styles.journeySubtext}>Master Concepts</div>
+                    </div>
                   </div>
                   <div className="journey-stage" style={styles.journeyStage}>
-                    <div className="journey-icon" style={journeyIconStyles[2]}><div style={styles.journeyIconInner}><FaTrophy size={isMobile ? 100 : 60} color="#f59e0b" /></div></div>
-                    <div style={styles.journeyTextWrapper}><div className="journey-label" style={styles.journeyLabel}>Excel</div><div style={styles.journeySubtext}>Achieve Success</div></div>
+                    <div className="journey-icon" style={journeyIconStyles[2]}>
+                      <div style={styles.journeyIconInner}>
+                        <FaTrophy size={isMobile ? 100 : 60} color="#f59e0b" />
+                      </div>
+                    </div>
+                    <div style={styles.journeyTextWrapper}>
+                      <div
+                        className="journey-label"
+                        style={styles.journeyLabel}
+                      >
+                        Excel
+                      </div>
+                      <div style={styles.journeySubtext}>Achieve Success</div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+            {/* dd */}
 
             <div style={styles.downloadSection}>
               <div style={styles.downloadSectionGlow}></div>
-              <div style={styles.readyBadge}><FaCheckCircle /><span>Ready for Download</span></div>
-              <button style={{ ...styles.downloadButton, ...(isDownloading ? styles.downloadButtonDisabled : {}) }} onClick={handleDownloadClick} disabled={isDownloading || validMaterials.length === 0}>
-                {isDownloading ? (<><FaSpinner style={styles.spinner} /><span>Zipping Files...</span></>) : (<><FaDownload /><span>Download All (.zip)</span></>)}
+              <div style={styles.readyBadge}>
+                <FaCheckCircle />
+                <span>Ready for Download</span>
+              </div>
+              <button
+                style={{
+                  ...styles.downloadButton,
+                  ...(isDownloading ? styles.downloadButtonDisabled : {}),
+                }}
+                onClick={handleDownloadClick}
+                disabled={isDownloading || validMaterials.length === 0}
+              >
+                {isDownloading ? (
+                  <>
+                    <FaSpinner style={styles.spinner} />
+                    <span>Zipping Files...</span>
+                  </>
+                ) : (
+                  <>
+                    <FaDownload />
+                    <span>Download All (.zip)</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
