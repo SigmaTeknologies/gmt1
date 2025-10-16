@@ -69,6 +69,7 @@ import { FaChevronDown } from "react-icons/fa6";
 import Lottie from "lottie-react";
 import JSZip from "jszip";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { Analytics } from "@vercel/analytics/react";
 
 // NOTE: Hardcoded data import has been removed.
 // All data is now fetched from Supabase.
@@ -1288,6 +1289,7 @@ function App() {
         onCheckout={handleCheckout}
       />
       <SpeedInsights />
+      <Analytics />
     </>
   );
 }
