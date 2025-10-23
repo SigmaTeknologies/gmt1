@@ -14,6 +14,9 @@ import { createClient } from "@supabase/supabase-js";
 import { GlobalStyles } from "./GlobalStyles"; // Import global styles
 // Import specific icons from react-icons/fa for Font Awesome
 import {
+  FaUniversity,
+  FaLock,
+  FaShieldAlt,
   FaTrophy,
   FaGraduationCap,
   FaBook,
@@ -114,7 +117,10 @@ const BankingDetails = () => {
 
         .banking-details-card {
           background: #ffffff;
-          border-radius: 16px;
+          /* Removed top/left/right margins, set width to 98% and centered */
+          width: 98%; 
+          margin: 0 auto; /* 0 top/bottom margin, auto for left/right to center */
+          border-radius: 16px; /* Keep overall border-radius */
           border: 1px solid #e2e8f0;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
           overflow: hidden;
@@ -140,7 +146,16 @@ const BankingDetails = () => {
           background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
           border-bottom: 1px solid #e2e8f0;
           color: #1e293b;
+          /* Removed top border-radius */
+          border-radius: 0; 
         }
+        
+        /* Apply top-left and top-right border-radius to the card itself, but the header should override */
+        .banking-details-card .card-header:first-child {
+            border-top-left-radius: 15px; /* Adjust as needed */
+            border-top-right-radius: 15px; /* Adjust as needed */
+        }
+
 
         .card-header h4 {
           margin: 0;
@@ -6065,25 +6080,28 @@ const PaymentModal = ({ isOpen, onClose }) => {
       backgroundColor: "rgba(0, 0, 0, 0.6)",
       backdropFilter: "blur(8px)",
       display: "flex",
-      alignItems: "stretch",
-      justifyContent: "stretch",
+      alignItems: "flex-start",
+      justifyContent: "center",
       zIndex: 10000,
-      padding: "24px",
+      padding: "0",
       animation: "fadeIn 0.2s ease-out",
     },
     modal: {
       backgroundColor: "#ffffff",
-      borderRadius: "28px",
+      // Changed: Removed border radius from top corners
+      borderRadius: "0 0 28px 28px", 
       padding: "0",
-      width: "100%",
-      height: "100%",
+      width: "98%",
+      // Changed: Removed maxHeight and overflowY
+      height: "auto", 
+      margin: "0 auto 24px auto",
       display: "flex",
       flexDirection: "column",
       position: "relative",
       boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
       border: "1px solid rgba(0, 0, 0, 0.06)",
       animation: "slideIn 0.3s ease-out",
-      overflow: "hidden",
+      // Changed: Removed overflowY
     },
     modalHeader: {
       background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)",
@@ -6091,6 +6109,8 @@ const PaymentModal = ({ isOpen, onClose }) => {
       position: "relative",
       overflow: "hidden",
       flexShrink: 0,
+      // Changed: Removed border-radius for top corners
+      borderRadius: "0", 
     },
     decorativeCircle1: {
       position: "absolute",
@@ -6166,7 +6186,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
     modalBody: {
       padding: "28px",
       flex: 1,
-      overflowY: "auto",
+      // Changed: Removed overflowY
     },
     infoHeader: {
       display: "flex",
@@ -6238,6 +6258,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
       display: "flex",
       justifyContent: "flex-end",
       flexShrink: 0,
+      borderRadius: "0 0 28px 28px",
     },
     confirmButton: {
       padding: "14px 32px",
@@ -6255,7 +6276,6 @@ const PaymentModal = ({ isOpen, onClose }) => {
     },
   };
 
-  // Add CSS animations and media queries to document head if not already present
   React.useEffect(() => {
     const styleId = "payment-modal-animations";
     if (!document.getElementById(styleId)) {
@@ -6267,25 +6287,31 @@ const PaymentModal = ({ isOpen, onClose }) => {
           to { opacity: 1; }
         }
         @keyframes slideIn {
-          from { 
+          from {
             opacity: 0;
-            transform: scale(0.95);
+            transform: translateY(-20px);
           }
-          to { 
+          to {
             opacity: 1;
-            transform: scale(1);
+            transform: translateY(0);
           }
         }
 
         @media (max-width: 768px) {
           .payment-modal-overlay {
-            padding: 16px !important;
+            padding: 0 !important;
           }
           .payment-modal {
-            border-radius: 24px !important;
+            // Changed: Removed top border-radius
+            border-radius: 0 0 24px 24px !important; 
+            margin: 0 auto 16px auto !important;
+            // Changed: Removed maxHeight for mobile as well
+            height: auto !important; 
           }
           .payment-modal-header {
             padding: 24px 20px !important;
+            // Changed: Removed top border-radius
+            border-radius: 0 !important; 
           }
           .payment-modal-header h2 {
             font-size: 1.5rem !important;
@@ -6305,6 +6331,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
           }
           .payment-modal-footer {
             padding: 16px 20px !important;
+            border-radius: 0 0 24px 24px !important;
           }
           .payment-modal-confirm-button {
             width: 100%;
@@ -6314,13 +6341,19 @@ const PaymentModal = ({ isOpen, onClose }) => {
 
         @media (max-width: 480px) {
           .payment-modal-overlay {
-            padding: 12px !important;
+            padding: 0 !important;
           }
           .payment-modal {
-            border-radius: 20px !important;
+            // Changed: Removed top border-radius
+            border-radius: 0 0 20px 20px !important; 
+            margin: 0 auto 12px auto !important;
+            // Changed: Removed maxHeight for mobile as well
+            height: auto !important; 
           }
           .payment-modal-header {
             padding: 20px 16px !important;
+            // Changed: Removed top border-radius
+            border-radius: 0 !important; 
           }
           .payment-modal-header h2 {
             font-size: 1.35rem !important;
@@ -6361,6 +6394,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
           }
           .payment-modal-footer {
             padding: 14px 16px !important;
+            border-radius: 0 0 20px 20px !important;
           }
         }
       `;
@@ -6403,20 +6437,10 @@ const PaymentModal = ({ isOpen, onClose }) => {
               className="payment-modal-icon-wrapper"
               style={modalStyles.iconWrapper}
             >
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+              <FaUniversity // Using FaUniversity as an example icon for banking
+                size={28}
                 style={{ color: "#ffffff" }}
-              >
-                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                <line x1="1" y1="10" x2="23" y2="10"></line>
-              </svg>
+              />
             </div>
             <h2 style={modalStyles.header}>Payment Information</h2>
             <p style={modalStyles.subtitle}>
@@ -6482,56 +6506,21 @@ const PaymentModal = ({ isOpen, onClose }) => {
               className="payment-modal-security-badge"
               style={modalStyles.securityBadge}
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
+              <FaLock size={14} />
               256-bit Encryption
             </div>
             <div
               className="payment-modal-security-badge"
               style={modalStyles.securityBadge}
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-              </svg>
+              <FaShieldAlt size={14} />
               PCI Compliant
             </div>
             <div
               className="payment-modal-security-badge"
               style={modalStyles.securityBadge}
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
+              <FaCheckCircle size={14} />
               Verified Account
             </div>
           </div>
