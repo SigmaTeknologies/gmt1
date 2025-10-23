@@ -735,8 +735,8 @@ function App() {
     if (!supabase) return;
     await supabase.auth.signOut();
     setView("home");
-    setAuthEvent(null);
-    addToast("You have been signed out.", "info");
+    setAuthEvent(null); // Reset auth event on sign out
+    addToast("Signed out.", "info");
   }, [addToast, setView]);
 
   const featuredCourses = useMemo(
@@ -784,11 +784,7 @@ function App() {
         if (testimonialsRes.error) throw testimonialsRes.error;
         setTestimonials(testimonialsRes.data);
       } catch (error) {
-        console.error("Error fetching initial data:", error);
-        addToast(
-          "Could not load site content. Please try again later.",
-          "error"
-        );
+        addToast("Content load failed.", "error");
       } finally {
         setIsLoading(false);
       }
@@ -943,14 +939,14 @@ function App() {
 
     if (authEvent === "PASSWORD_RECOVERY" && view !== "update-password") {
       setView("update-password");
-      addToast("Please update your password before continuing.", "info");
+      addToast("Please update password.", "info");
       return;
     }
 
     if (!session && protectedRoutes.includes(view)) {
       if (view === "checkout" && cart.length > 0) setViewAfterLogin("checkout");
-      setView("login");
-      addToast("Please sign in to continue.", "info");
+      setView("login"); // Redirect to login for protected routes
+      addToast("Please sign in.", "info");
       return;
     }
     if (session && authRoutes.includes(view)) {
@@ -1031,13 +1027,10 @@ function App() {
             : item
         )
       );
-      addToast("Quantity updated in cart.", "info");
+      addToast("Cart updated.", "info");
     } else {
-      setCart((prevCart) => [
-        ...prevCart,
-        { ...courseToAdd, quantity: 1, image_url: courseToAdd.image_url },
-      ]);
-      addToast(`${courseToAdd.title} added to cart!`, "success");
+      setCart((prevCart) => [...prevCart, { ...courseToAdd, quantity: 1 }]);
+      addToast("Course added to cart.", "success");
     }
   };
 
@@ -1048,8 +1041,7 @@ function App() {
   const removeFromCartHandler = (courseId) => {
     const removedItem = cart.find((item) => item.id === courseId);
     setCart((prevCart) => prevCart.filter((item) => item.id !== courseId));
-    if (removedItem)
-      addToast(`${removedItem.title} removed from cart.`, "info");
+    if (removedItem) addToast("Course removed.", "info");
   };
 
   const handleCheckout = () => {
@@ -3549,18 +3541,13 @@ const ContactSection = ({
       if (error) throw error;
 
       // ====================================================== //
-      // ============== THIS IS THE ONLY CHANGE =============== //
-      // We are updating the success message to be more specific.
+      // ================== UPDATED ALERT TEXT ================== //
       // ====================================================== //
-      addToast(
-        "Message sent! You will receive a reply via email shortly.",
-        "success"
-      );
+      addToast("Message sent!", "success");
 
       setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
     } catch (error) {
-      console.error("Supabase form submission error:", error.message);
-      addToast(`Error: ${error.message}`, "error"); // Also improved error message
+      addToast("Send failed.", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -4099,9 +4086,9 @@ const AuthSection = ({
     });
 
     if (error) {
-      addToast(error.message, "error");
+      addToast("Login failed. Please check your credentials.", "error");
     } else {
-      addToast("Signed in successfully!", "success");
+      addToast("Signed in.", "success");
       // IMPORTANT: After a successful login with a custom client,
       // you must reload the page to ensure the entire app
       // is now using the same session from localStorage.
@@ -4116,14 +4103,11 @@ const AuthSection = ({
   const handleSignUp = async (e) => {
     e.preventDefault();
     if (emailExists) {
-      addToast(
-        "This email is already registered. Please log in or reset your password.",
-        "error"
-      );
+      addToast("Email already registered.", "error");
       return;
     }
     if (!isPasswordStrong) {
-      addToast("Please create a stronger password.", "error");
+      addToast("Password not strong.", "error");
       return;
     }
     setLoading(true);
@@ -4142,10 +4126,10 @@ const AuthSection = ({
     });
 
     if (error) {
-      addToast(error.message, "error");
+      addToast("Sign up failed. Please try again.", "error");
     } else {
       setMessage("Please check your email to verify your account.");
-      addToast("Verification email sent!", "info");
+      addToast("Verification sent.", "info");
     }
     setLoading(false);
   };
@@ -4553,7 +4537,7 @@ const PasswordResetSection = ({
     });
 
     if (error) {
-      addToast(error.message, "error");
+      addToast("Reset failed. Please try again.", "error");
     } else {
       // UPDATED LOGIC: Instead of redirecting, show the confirmation screen.
       setIsSubmitted(true);
@@ -4798,10 +4782,7 @@ const UpdatePasswordSection = ({
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
     if (!isPasswordStrong) {
-      addToast(
-        "Please create a stronger password that meets all criteria.",
-        "error"
-      );
+      addToast("Password not strong.", "error");
       return;
     }
     setLoading(true);
@@ -4809,10 +4790,7 @@ const UpdatePasswordSection = ({
     if (error) {
       addToast(error.message, "error");
     } else {
-      addToast(
-        "Password updated successfully! You can now sign in.",
-        "success"
-      );
+      addToast("Password updated.", "success");
       setView("login");
     }
     setLoading(false);
@@ -5123,9 +5101,9 @@ const AccountSection = ({
       },
     });
     if (error) {
-      addToast(`Failed to update details: ${error.message}`, "error");
+      addToast("Update failed.", "error");
     } else {
-      addToast("Account details updated successfully!", "success");
+      addToast("Details updated.", "success");
       setInitialDetails({
         ...details,
         firstName: details.firstName.trim(),
@@ -5138,27 +5116,21 @@ const AccountSection = ({
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      addToast("Passwords do not match.", "error");
+      addToast("Passwords don't match.", "error");
       return;
     }
     if (!isPasswordStrong) {
-      addToast(
-        "Password is not strong enough. Please meet all criteria.",
-        "error"
-      );
+      addToast("Password not strong.", "error");
       return;
     }
     setPasswordLoading(true);
     const { error } = await supabaseClient.auth.updateUser({ password });
 
     if (error) {
-      addToast(error.message, "error");
+      addToast("Update failed.", "error");
       setPasswordLoading(false);
     } else {
-      addToast(
-        "Password updated! For security, you will be signed out.",
-        "success"
-      );
+      addToast("Password updated.", "success");
       setTimeout(async () => {
         await supabaseClient.auth.signOut();
       }, 2000);
@@ -5171,7 +5143,7 @@ const AccountSection = ({
   const handleConfirmDelete = async (e) => {
     e.preventDefault();
     if (!deletePassword) {
-      addToast("Please enter your password to confirm.", "error");
+      addToast("Enter password to confirm.", "error");
       return;
     }
     setIsDeleting(true);
@@ -5186,7 +5158,7 @@ const AccountSection = ({
     );
 
     if (signInError) {
-      addToast("Incorrect password. Account not deleted.", "error");
+      addToast("Incorrect password.", "error");
       setIsDeleting(false);
       return;
     }
@@ -5198,15 +5170,10 @@ const AccountSection = ({
     );
 
     if (deleteError) {
-      addToast(`Error deleting account data: ${deleteError.message}`, "error");
+      addToast("Deletion failed.", "error");
       setIsDeleting(false);
     } else {
-      // Step 3: If the database cleanup is successful, sign the user out.
-      // The `onAuthStateChange` listener in App.js will handle the UI redirect.
-      addToast(
-        "Your account and data have been successfully deleted.",
-        "success"
-      );
+      addToast("Account deleted.", "success");
       await supabaseClient.auth.signOut();
       // No need to set more state here as the component will unmount.
     }
@@ -8468,13 +8435,12 @@ const CheckoutSection = ({
         .insert([orderPayload]);
       if (error) throw error;
 
-      addToast("Order placed successfully!", "success");
+      addToast("Order placed.", "success");
       setCart([]);
       await refreshOrders();
       setView("dashboard");
     } catch (error) {
-      console.error("Supabase order submission error:", error.message);
-      addToast(`Could not place order: ${error.message}`, "error");
+      addToast("Order failed.", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -8765,9 +8731,6 @@ const CheckoutSection = ({
                   onChange={handleInputChange}
                   required
                 >
-                  <option value="" disabled>
-                    Select a province...
-                  </option>
                   {provinces.map((p) => (
                     <option key={p} value={p}>
                       {p}
