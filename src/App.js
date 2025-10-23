@@ -70,10 +70,7 @@ import Lottie from "lottie-react";
 import JSZip from "jszip";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
-
-// NOTE: Hardcoded data import has been removed.
-// All data is now fetched from Supabase.
-import { aboutUsData } from "./appData"; // Kept for About Us as it's complex and not in the initial schema request. Can be made dynamic later.
+import { aboutUsData } from "./appData"; 
 
 const navLinksData = [
   { id: "home", text: "Home", type: "link" },
@@ -94,15 +91,15 @@ const navLinksData = [
   { id: "contact", text: "Contact", type: "link" },
 ];
 
-// --- Banking Details Component ---
+
 const BankingDetails = () => {
   const [isCopied, setIsCopied] = useState(false);
-  const accountNumber = "62793528830"; // Store account number for easy access
+  const accountNumber = "62793528830";
 
   const handleCopy = () => {
     navigator.clipboard.writeText(accountNumber).then(() => {
       setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
+      setTimeout(() => setIsCopied(false), 2000);
     });
   };
 
@@ -7501,23 +7498,28 @@ const StudyMaterialModal = ({
       bottom: 0,
       backgroundColor: "rgba(0, 0, 0, 0.75)",
       display: "flex",
-      alignItems: "center",
+      alignItems: "flex-start", // changed to start at the very top
       justifyContent: "center",
       zIndex: 10000,
       padding: 0,
+      paddingTop: 0, // ensure no extra gap at top
       animation: "fadeIn 0.3s ease",
     },
     modal: {
       backgroundColor: "#f8fafc",
       backgroundImage: svgBgPattern,
-      width: "100%",
-      height: "100%",
+      width: "98%",
+      // Removed top/bottom offsets so modal can start flush at top
+      margin: "0", // flush to top
+      maxHeight: "100%", // allow full height if needed
       display: "flex",
       flexDirection: "column",
       position: "relative",
       boxShadow: "0 15px 50px -10px rgba(0, 0, 0, 0.3)",
       animation: "slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
       overflow: "hidden",
+      // Keep top corners sharp so it's flush with viewport top
+      borderRadius: "0 0 20px 20px",
     },
     header: {
       background: isMobile
@@ -7526,6 +7528,7 @@ const StudyMaterialModal = ({
       padding: isMobile ? "24px 20px" : "32px 28px",
       position: "relative",
       overflow: "hidden",
+      // No border radius for the header to maintain sharp top corners
       flexShrink: 0,
     },
     decorativePattern: {
@@ -7642,23 +7645,21 @@ const StudyMaterialModal = ({
       color: "#075985",
       fontWeight: "600",
     },
-    // Change the journeyContainer style to remove flex: 1
-journeyContainer: {
-  background: isMobile
-    ? "#ffffff"
-    : "linear-gradient(135deg, #ffffff 0%, #ffffff 100%)",
-  borderRadius: "20px",
-  padding: isMobile ? "28px 20px" : "40px 32px",
-  border: "1px solid #e2e8f0",
-  boxShadow: "0 4px 16px rgba(0, 0, 0, 0.06)",
-  // Remove or comment out: flex: 1,
-  display: "flex",
-  flexDirection: "column",
-  justifyContent: "center",
-  position: "relative",
-  overflow: "hidden",
-  minHeight: isMobile ? "450px" : "350px",
-},
+    journeyContainer: {
+      background: isMobile
+        ? "#ffffff"
+        : "linear-gradient(135deg, #ffffff 0%, #ffffff 100%)",
+      borderRadius: "20px",
+      padding: isMobile ? "28px 20px" : "40px 32px",
+      border: "1px solid #e2e8f0",
+      boxShadow: "0 4px 16px rgba(0, 0, 0, 0.06)",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      position: "relative",
+      overflow: "hidden",
+      minHeight: isMobile ? "450px" : "350px",
+    },
     journeyBg: {
       position: "absolute",
       top: 0,
