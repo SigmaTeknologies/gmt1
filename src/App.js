@@ -95,351 +95,7 @@ const navLinksData = [
 ];
 
 
-const BankingDetails = () => {
-  const [isCopied, setIsCopied] = useState(false);
-  const accountNumber = "62793528830";
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(accountNumber).then(() => {
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    });
-  };
-
-  return (
-    <>
-      <style>{`
-        /* --- Animation --- */
-        @keyframes float-animation {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-12px); }
-        }
-
-        .banking-details-card {
-          background: #ffffff;
-          /* Removed top/left/right margins, set width to 98% and centered */
-          width: 98%; 
-          margin: 0 auto; /* 0 top/bottom margin, auto for left/right to center */
-          border-radius: 16px; /* Keep overall border-radius */
-          border: 1px solid #e2e8f0;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-          overflow: hidden;
-          font-family: 'Inter', sans-serif;
-        }
-
-        /* --- Main Two-Column Grid --- */
-        .card-body-grid {
-          display: grid;
-          grid-template-columns: 1.2fr 1fr; /* 55% for details, 45% for illustration */
-        }
-
-        /* --- Details Column (Left) --- */
-        .details-column {
-          /* This column will contain all the textual information */
-        }
-        
-        .card-header {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 16px 24px;
-          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-          border-bottom: 1px solid #e2e8f0;
-          color: #1e293b;
-          /* Removed top border-radius */
-          border-radius: 0; 
-        }
-        
-        /* Apply top-left and top-right border-radius to the card itself, but the header should override */
-        .banking-details-card .card-header:first-child {
-            border-top-left-radius: 15px; /* Adjust as needed */
-            border-top-right-radius: 15px; /* Adjust as needed */
-        }
-
-
-        .card-header h4 {
-          margin: 0;
-          font-size: 1.1rem;
-          font-weight: 600;
-        }
-        
-        .card-header svg {
-           color: #005A9C;
-        }
-
-        .card-content {
-          padding: 24px;
-        }
-
-        .card-content p {
-          font-size: 0.9rem;
-          color: #475569;
-          line-height: 1.6;
-          margin-top: 0;
-          margin-bottom: 24px;
-        }
-
-        .details-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 20px 24px;
-        }
-
-        .detail-item {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .detail-item .label {
-          font-size: 0.75rem;
-          font-weight: 500;
-          color: #64748b;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-
-        .detail-item .value {
-          font-size: 1rem;
-          font-weight: 600;
-          color: #0f172a;
-        }
-        
-        .account-number-wrapper {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 8px;
-        }
-
-        .account-number-value {
-          font-family: 'Roboto Mono', monospace;
-          font-size: 1.1rem;
-          letter-spacing: 1px;
-        }
-
-        .copy-button {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          background: #f1f5f9;
-          border: 1px solid #e2e8f0;
-          color: #475569;
-          padding: 8px;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .copy-button:hover {
-          background: #e2e8f0;
-          color: #1e293b;
-        }
-        
-        .copy-button.copied {
-          background-color: #dcfce7;
-          border-color: #86efac;
-          color: #166534;
-        }
-
-        .card-footer {
-          display: flex;
-          align-items: flex-start;
-          gap: 10px;
-          background: #f0f9ff;
-          padding: 16px 24px;
-          border-top: 1px solid #e2e8f0;
-        }
-        
-        .card-footer svg {
-          color: #0284c7;
-          margin-top: 3px;
-          flex-shrink: 0;
-        }
-        
-        .card-footer .status-note {
-          margin: 0;
-          font-size: 0.85rem;
-          color: #0369a1;
-          line-height: 1.5;
-        }
-
-        /* --- Illustration Column (Right) --- */
-        .illustration-column {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(160deg, #f0f9ff 0%, #e0f2fe 100%);
-          border-left: 1px solid #e2e8f0;
-          padding: 32px;
-          overflow: hidden;
-        }
-        
-        .wallet-illustration {
-           width: 100%;
-           max-width: 250px;
-           height: auto;
-           animation: float-animation 4s ease-in-out infinite;
-        }
-
-        /* --- Responsive Adjustments --- */
-        @media (max-width: 900px) {
-          .card-body-grid {
-            grid-template-columns: 1fr; /* Stack columns */
-          }
-          
-          .illustration-column {
-            order: -1; /* Move illustration to the top */
-            border-left: none;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 40px 24px;
-          }
-        }
-      
-        @media (max-width: 600px) {
-          .details-grid {
-            grid-template-columns: 1fr;
-            gap: 16px;
-          }
-          
-          .card-content {
-            padding: 16px;
-          }
-          
-          .card-header, .card-footer {
-            padding: 12px 16px;
-          }
-        }
-      `}</style>
-
-      <div className="banking-details-card">
-        <div className="card-body-grid">
-          {/* --- Illustration Column --- */}
-          <div className="illustration-column">
-            <svg
-              className="wallet-illustration"
-              viewBox="0 0 200 180"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <g>
-                {/* Background shapes */}
-                <circle cx="150" cy="40" r="50" fill="#bae6fd" opacity="0.5" />
-                <circle cx="50" cy="140" r="40" fill="#bfdbfe" opacity="0.5" />
-
-                {/* Wallet Body */}
-                <path
-                  d="M20 60C20 54.4772 24.4772 50 30 50H170C175.523 50 180 54.4772 180 60V140C180 145.523 175.523 150 170 150H30C24.4772 150 20 145.523 20 140V60Z"
-                  fill="#005A9C"
-                />
-                <path
-                  d="M20 70H180V80C180 85.5228 175.523 90 170 90H30C24.4772 90 20 85.5228 20 80V70Z"
-                  fill="#003d6b"
-                />
-
-                {/* Credit Card */}
-                <g transform="translate(40, 20) rotate(-10, 80, 50)">
-                  <rect
-                    x="40"
-                    y="20"
-                    width="120"
-                    height="70"
-                    rx="8"
-                    fill="#ffffff"
-                    stroke="#e0e7ff"
-                    strokeWidth="2"
-                  />
-                  <rect
-                    x="50"
-                    y="65"
-                    width="60"
-                    height="10"
-                    rx="3"
-                    fill="#cbd5e1"
-                  />
-                  <rect
-                    x="130"
-                    y="68"
-                    width="20"
-                    height="5"
-                    rx="2"
-                    fill="#94a3b8"
-                  />
-                  <circle cx="145" cy="35" r="8" fill="#fbbf24" />
-                  <circle cx="135" cy="35" r="8" fill="#f87171" opacity="0.8" />
-                </g>
-
-                {/* Success Checkmark */}
-                <circle cx="165" cy="135" r="15" fill="#34d399" />
-                <path
-                  d="M160 135L164 139L170 133"
-                  stroke="white"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </g>
-            </svg>
-          </div>
-
-          {/* --- Details Column --- */}
-          <div className="details-column">
-            <div className="card-header">
-              <FaCreditCard size="1.2em" />
-              <h4>Payment Information (EFT)</h4>
-            </div>
-            <div className="card-content">
-              <p>
-                Please make your payment to the bank account below. Use your{" "}
-                <strong>Order ID</strong> as the payment reference.
-              </p>
-              <div className="details-grid">
-                <div className="detail-item">
-                  <span className="label">Bank</span>
-                  <span className="value">FNB (First National Bank)</span>
-                </div>
-                <div className="detail-item">
-                  <span className="label">Account Holder</span>
-                  <span className="value">GMT Safety Solutions (Pty) Ltd</span>
-                </div>
-                <div className="detail-item">
-                  <span className="label">Account Number</span>
-                  <div className="account-number-wrapper">
-                    <span className="value account-number-value">
-                      {accountNumber}
-                    </span>
-                    <button
-                      onClick={handleCopy}
-                      className={`copy-button ${isCopied ? "copied" : ""}`}
-                      title={isCopied ? "Copied!" : "Copy to clipboard"}
-                    >
-                      {isCopied ? <FaCheck /> : <FaRegCopy />}
-                    </button>
-                  </div>
-                </div>
-                <div className="detail-item">
-                  <span className="label">Branch Code</span>
-                  <span className="value">250655 (Welkom)</span>
-                </div>
-                <div className="detail-item">
-                  <span className="label">Account Type</span>
-                  <span className="value">Cheque</span>
-                </div>
-              </div>
-            </div>
-            <div className="card-footer">
-              <FaInfoCircle />
-              <p className="status-note">
-                Your order status will be updated to "Processing" once payment
-                is confirmed.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-};
 
 const StyleInjector = ({ css }) => {
   useEffect(() => {
@@ -4086,7 +3742,7 @@ const AuthSection = ({
     });
 
     if (error) {
-      addToast("Login failed. Please check your credentials.", "error");
+      addToast("Wrong login details.", "error");
     } else {
       addToast("Signed in.", "success");
       // IMPORTANT: After a successful login with a custom client,
@@ -6034,6 +5690,352 @@ const PasswordDemo = () => {
   );
 };
 
+const BankingDetails = () => {
+  const [isCopied, setIsCopied] = useState(false);
+  const accountNumber = "62793528830";
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(accountNumber).then(() => {
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    });
+  };
+
+  return (
+    <>
+      <style>{`
+        /* --- Animation --- */
+        @keyframes float-animation {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-12px); }
+        }
+
+        .banking-details-card {
+          background: #ffffff;
+          /* Removed top/left/right margins, set width to 98% and centered */
+          width: 98%; 
+          margin: 0 auto; /* 0 top/bottom margin, auto for left/right to center */
+          border-radius: 16px; /* Keep overall border-radius */
+          border: 1px solid #e2e8f0;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+          overflow: hidden;
+          font-family: 'Inter', sans-serif;
+        }
+
+        /* --- Main Two-Column Grid --- */
+        .card-body-grid {
+          display: grid;
+          grid-template-columns: 1.2fr 1fr; /* 55% for details, 45% for illustration */
+        }
+
+        /* --- Details Column (Left) --- */
+        .details-column {
+          /* This column will contain all the textual information */
+        }
+        
+        .card-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 16px 24px;
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+          border-bottom: 1px solid #e2e8f0;
+          color: #1e293b;
+          /* Removed top border-radius */
+          border-radius: 0; 
+        }
+        
+        /* Apply top-left and top-right border-radius to the card itself, but the header should override */
+        .banking-details-card .card-header:first-child {
+            border-top-left-radius: 15px; /* Adjust as needed */
+            border-top-right-radius: 15px; /* Adjust as needed */
+        }
+
+
+        .card-header h4 {
+          margin: 0;
+          font-size: 1.1rem;
+          font-weight: 600;
+        }
+        
+        .card-header svg {
+           color: #005A9C;
+        }
+
+        .card-content {
+          padding: 24px;
+        }
+
+        .card-content p {
+          font-size: 0.9rem;
+          color: #475569;
+          line-height: 1.6;
+          margin-top: 0;
+          margin-bottom: 24px;
+        }
+
+        .details-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 20px 24px;
+        }
+
+        .detail-item {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .detail-item .label {
+          font-size: 0.75rem;
+          font-weight: 500;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .detail-item .value {
+          font-size: 1rem;
+          font-weight: 600;
+          color: #0f172a;
+        }
+        
+        .account-number-wrapper {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+
+        .account-number-value {
+          font-family: 'Roboto Mono', monospace;
+          font-size: 1.1rem;
+          letter-spacing: 1px;
+        }
+
+        .copy-button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: #f1f5f9;
+          border: 1px solid #e2e8f0;
+          color: #475569;
+          padding: 8px;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .copy-button:hover {
+          background: #e2e8f0;
+          color: #1e293b;
+        }
+        
+        .copy-button.copied {
+          background-color: #dcfce7;
+          border-color: #86efac;
+          color: #166534;
+        }
+
+        .card-footer {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          background: #f0f9ff;
+          padding: 16px 24px;
+          border-top: 1px solid #e2e8f0;
+        }
+        
+        .card-footer svg {
+          color: #0284c7;
+          margin-top: 3px;
+          flex-shrink: 0;
+        }
+        
+        .card-footer .status-note {
+          margin: 0;
+          font-size: 0.85rem;
+          color: #0369a1;
+          line-height: 1.5;
+        }
+
+        /* --- Illustration Column (Right) --- */
+        .illustration-column {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(160deg, #f0f9ff 0%, #e0f2fe 100%);
+          border-left: 1px solid #e2e8f0;
+          padding: 32px;
+          overflow: hidden;
+        }
+        
+        .wallet-illustration {
+           width: 100%;
+           max-width: 250px;
+           height: auto;
+           animation: float-animation 4s ease-in-out infinite;
+        }
+
+        /* --- Responsive Adjustments --- */
+        @media (max-width: 900px) {
+          .card-body-grid {
+            grid-template-columns: 1fr; /* Stack columns */
+          }
+          
+          .illustration-column {
+            order: -1; /* Move illustration to the top */
+            border-left: none;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 40px 24px;
+          }
+        }
+      
+        @media (max-width: 600px) {
+          .details-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+          }
+          
+          .card-content {
+            padding: 16px;
+          }
+          
+          .card-header, .card-footer {
+            padding: 12px 16px;
+          }
+        }
+      `}</style>
+
+      <div className="banking-details-card">
+        <div className="card-body-grid">
+          {/* --- Illustration Column --- */}
+          <div className="illustration-column">
+            <svg
+              className="wallet-illustration"
+              viewBox="0 0 200 180"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <g>
+                {/* Background shapes */}
+                <circle cx="150" cy="40" r="50" fill="#bae6fd" opacity="0.5" />
+                <circle cx="50" cy="140" r="40" fill="#bfdbfe" opacity="0.5" />
+
+                {/* Wallet Body */}
+                <path
+                  d="M20 60C20 54.4772 24.4772 50 30 50H170C175.523 50 180 54.4772 180 60V140C180 145.523 175.523 150 170 150H30C24.4772 150 20 145.523 20 140V60Z"
+                  fill="#005A9C"
+                />
+                <path
+                  d="M20 70H180V80C180 85.5228 175.523 90 170 90H30C24.4772 90 20 85.5228 20 80V70Z"
+                  fill="#003d6b"
+                />
+
+                {/* Credit Card */}
+                <g transform="translate(40, 20) rotate(-10, 80, 50)">
+                  <rect
+                    x="40"
+                    y="20"
+                    width="120"
+                    height="70"
+                    rx="8"
+                    fill="#ffffff"
+                    stroke="#e0e7ff"
+                    strokeWidth="2"
+                  />
+                  <rect
+                    x="50"
+                    y="65"
+                    width="60"
+                    height="10"
+                    rx="3"
+                    fill="#cbd5e1"
+                  />
+                  <rect
+                    x="130"
+                    y="68"
+                    width="20"
+                    height="5"
+                    rx="2"
+                    fill="#94a3b8"
+                  />
+                  <circle cx="145" cy="35" r="8" fill="#fbbf24" />
+                  <circle cx="135" cy="35" r="8" fill="#f87171" opacity="0.8" />
+                </g>
+
+                {/* Success Checkmark */}
+                <circle cx="165" cy="135" r="15" fill="#34d399" />
+                <path
+                  d="M160 135L164 139L170 133"
+                  stroke="white"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </g>
+            </svg>
+          </div>
+
+          {/* --- Details Column --- */}
+          <div className="details-column">
+            <div className="card-header">
+              <FaCreditCard size="1.2em" />
+              <h4>Payment Information (EFT)</h4>
+            </div>
+            <div className="card-content">
+              <p>
+                Please make your payment to the bank account below. Use your{" "}
+                <strong>Order ID</strong> as the payment reference.
+              </p>
+              <div className="details-grid">
+                <div className="detail-item">
+                  <span className="label">Bank</span>
+                  <span className="value">FNB (First National Bank)</span>
+                </div>
+                <div className="detail-item">
+                  <span className="label">Account Holder</span>
+                  <span className="value">GMT Safety Solutions (Pty) Ltd</span>
+                </div>
+                <div className="detail-item">
+                  <span className="label">Account Number</span>
+                  <div className="account-number-wrapper">
+                    <span className="value account-number-value">
+                      {accountNumber}
+                    </span>
+                    <button
+                      onClick={handleCopy}
+                      className={`copy-button ${isCopied ? "copied" : ""}`}
+                      title={isCopied ? "Copied!" : "Copy to clipboard"}
+                    >
+                      {isCopied ? <FaCheck /> : <FaRegCopy />}
+                    </button>
+                  </div>
+                </div>
+                <div className="detail-item">
+                  <span className="label">Branch Code</span>
+                  <span className="value">250655 (Welkom)</span>
+                </div>
+                <div className="detail-item">
+                  <span className="label">Account Type</span>
+                  <span className="value">Cheque</span>
+                </div>
+              </div>
+            </div>
+            <div className="card-footer">
+              <FaInfoCircle />
+              <p className="status-note">
+                Your order status will be updated to "Processing" once payment
+                is confirmed.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
 const PaymentModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
@@ -6047,7 +6049,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
       backgroundColor: "rgba(0, 0, 0, 0.6)",
       backdropFilter: "blur(8px)",
       display: "flex",
-      alignItems: "flex-start",
+      alignItems: "flex-start", // Align to the top
       justifyContent: "center",
       zIndex: 10000,
       padding: "0",
@@ -6055,20 +6057,19 @@ const PaymentModal = ({ isOpen, onClose }) => {
     },
     modal: {
       backgroundColor: "#ffffff",
-      // Changed: Removed border radius from top corners
-      borderRadius: "0 0 28px 28px", 
+      borderRadius: "0 0 28px 28px",
       padding: "0",
       width: "98%",
-      // Changed: Removed maxHeight and overflowY
-      height: "auto", 
-      margin: "0 auto 24px auto",
+      height: "98%", // Set height to 100%
+      maxHeight: "98%", // Set max-height to 100%
+      margin: "0 auto", // Remove fixed bottom margin
       display: "flex",
       flexDirection: "column",
       position: "relative",
       boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
       border: "1px solid rgba(0, 0, 0, 0.06)",
       animation: "slideIn 0.3s ease-out",
-      // Changed: Removed overflowY
+      overflowY: "hidden", // Hide scroll for the modal container itself
     },
     modalHeader: {
       background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)",
@@ -6076,8 +6077,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
       position: "relative",
       overflow: "hidden",
       flexShrink: 0,
-      // Changed: Removed border-radius for top corners
-      borderRadius: "0", 
+      borderRadius: "0",
     },
     decorativeCircle1: {
       position: "absolute",
@@ -6153,7 +6153,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
     modalBody: {
       padding: "28px",
       flex: 1,
-      // Changed: Removed overflowY
+      overflowY: "auto", // Allow content within the body to scroll
     },
     infoHeader: {
       display: "flex",
@@ -6269,15 +6269,14 @@ const PaymentModal = ({ isOpen, onClose }) => {
             padding: 0 !important;
           }
           .payment-modal {
-            // Changed: Removed top border-radius
-            border-radius: 0 0 24px 24px !important; 
-            margin: 0 auto 16px auto !important;
-            // Changed: Removed maxHeight for mobile as well
-            height: auto !important; 
+            border-radius: 0 !important; /* Remove border-radius on mobile for full height */
+            margin: 0 !important; /* No margin on mobile for full height */
+            height: 100% !important; /* Full height on mobile */
+            max-height: 100% !important; /* Full max-height on mobile */
+            overflow-y: hidden !important; /* Hide scroll for the modal container, let body scroll */
           }
           .payment-modal-header {
             padding: 24px 20px !important;
-            // Changed: Removed top border-radius
             border-radius: 0 !important; 
           }
           .payment-modal-header h2 {
@@ -6288,6 +6287,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
           }
           .payment-modal-body {
             padding: 20px !important;
+            overflow-y: auto !important; /* Allow scroll for modal body */
           }
           .payment-modal-info-header {
             flex-direction: column !important;
@@ -6298,7 +6298,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
           }
           .payment-modal-footer {
             padding: 16px 20px !important;
-            border-radius: 0 0 24px 24px !important;
+            border-radius: 0 !important; /* Remove border-radius on mobile for full height */
           }
           .payment-modal-confirm-button {
             width: 100%;
@@ -6311,15 +6311,14 @@ const PaymentModal = ({ isOpen, onClose }) => {
             padding: 0 !important;
           }
           .payment-modal {
-            // Changed: Removed top border-radius
-            border-radius: 0 0 20px 20px !important; 
-            margin: 0 auto 12px auto !important;
-            // Changed: Removed maxHeight for mobile as well
-            height: auto !important; 
+            border-radius: 0 !important; /* Remove border-radius on mobile for full height */
+            margin: 0 !important; /* No margin on mobile for full height */
+            height: 100% !important; /* Full height on mobile */
+            max-height: 100% !important; /* Full max-height on mobile */
+            overflow-y: hidden !important; /* Hide scroll for the modal container, let body scroll */
           }
           .payment-modal-header {
             padding: 20px 16px !important;
-            // Changed: Removed top border-radius
             border-radius: 0 !important; 
           }
           .payment-modal-header h2 {
@@ -6346,6 +6345,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
           }
           .payment-modal-body {
             padding: 16px !important;
+            overflow-y: auto !important; /* Allow scroll for modal body */
           }
           .payment-modal-info-title {
             font-size: 1rem !important;
@@ -6361,7 +6361,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
           }
           .payment-modal-footer {
             padding: 14px 16px !important;
-            border-radius: 0 0 20px 20px !important;
+            border-radius: 0 !important; /* Remove border-radius on mobile for full height */
           }
         }
       `;
@@ -6519,7 +6519,6 @@ const PaymentModal = ({ isOpen, onClose }) => {
   );
 };
 
-// Copy to clipboard utility function with better error handling
 const copyToClipboard = async (text) => {
   try {
     if (navigator.clipboard && window.isSecureContext) {
