@@ -73,7 +73,7 @@ import Lottie from "lottie-react";
 import JSZip from "jszip";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
-import { aboutUsData } from "./appData"; 
+import { aboutUsData } from "./appData";
 
 const navLinksData = [
   { id: "home", text: "Home", type: "link" },
@@ -93,9 +93,6 @@ const navLinksData = [
   { id: "about", text: "About Us", type: "link" },
   { id: "contact", text: "Contact", type: "link" },
 ];
-
-
-
 
 const StyleInjector = ({ css }) => {
   useEffect(() => {
@@ -3127,22 +3124,28 @@ const ContactSection = ({
   const formatSAPHoneNumber = (phone) => {
     if (!phone) return "";
     let digits = phone.toString().replace(/\D/g, "");
+
+    // Assume all incoming numbers without a country code are South African and prepend +27
     if (digits.length === 10 && digits.startsWith("0")) {
       digits = "27" + digits.substring(1);
-    } else if (digits.length === 11 && digits.startsWith("27")) {
-      // Correct format
-    } else if (digits.length > 11) {
-      return phone;
-    } else {
-      return phone;
+    } else if (digits.length === 9 && !digits.startsWith("0")) {
+      // Handles cases like 721234567 -> 27721234567
+      digits = "27" + digits;
     }
-    if (digits.length === 11) {
-      return `+${digits.slice(0, 2)} ${digits.slice(2, 4)} ${digits.slice(
-        4,
-        7
-      )} ${digits.slice(7, 11)}`;
+
+    // Ensure it starts with a '+' for the href
+    if (!digits.startsWith("+")) {
+      digits = "+" + digits;
     }
-    return phone;
+
+    // Format for display (example for +27 72 123 4567)
+    if (digits.length === 12 && digits.startsWith("+27")) {
+      return `+${digits.slice(1, 3)} ${digits.slice(3, 5)} ${digits.slice(
+        5,
+        8
+      )} ${digits.slice(8, 12)}`;
+    }
+    return digits; // Return as is if it doesn't match expected SA format
   };
 
   const getUserName = (user) => {
@@ -3187,6 +3190,7 @@ const ContactSection = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!supabaseClient) {
+      addToast("Supabase client not initialized.", "error");
       return;
     }
     setIsSubmitting(true);
@@ -3196,13 +3200,11 @@ const ContactSection = ({
         .insert([{ ...formData, phone: formData.phone || null }]);
       if (error) throw error;
 
-      // ====================================================== //
-      // ================== UPDATED ALERT TEXT ================== //
-      // ====================================================== //
       addToast("Message sent!", "success");
 
       setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
     } catch (error) {
+      console.error("Error sending message:", error);
       addToast("Send failed.", "error");
     } finally {
       setIsSubmitting(false);
@@ -3561,7 +3563,11 @@ const ContactSection = ({
                     {location.phone && (
                       <p>
                         <FaPhoneAlt />{" "}
-                        <a href={`tel:${location.phone}`}>
+                        <a
+                          href={`tel:${formatSAPHoneNumber(
+                            location.phone
+                          ).replace(/\s/g, "")}`}
+                        >
                           {formatSAPHoneNumber(location.phone)}
                         </a>
                       </p>
@@ -3586,7 +3592,6 @@ const ContactSection = ({
     </section>
   );
 };
-
 // This hook should be present in your file, right after the imports
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -6036,7 +6041,8 @@ const BankingDetails = () => {
   );
 };
 
-const PaymentModal = ({ isOpen, onClose }) => {
+const PaymentModal = ({ isOpen, onClose, amount, orderTotal }) => {
+  const displayAmount = typeof amount !== 'undefined' ? amount : orderTotal;
   if (!isOpen) return null;
 
   const modalStyles = {
@@ -6062,7 +6068,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
       width: "98%",
       height: "98%", // Set height to 100%
       maxHeight: "98%", // Set max-height to 100%
-      margin: "0 auto", // Remove fixed bottom margin
+      margin: "0 24 24 24", // Remove fixed bottom margin
       display: "flex",
       flexDirection: "column",
       position: "relative",
@@ -6458,7 +6464,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
                 className="payment-modal-price-amount"
                 style={modalStyles.priceAmount}
               >
-                R 850.00
+                {typeof displayAmount !== 'undefined' ? formatCurrency(displayAmount) : 'R 0.00'}
               </div>
             </div>
           </div>
@@ -7453,37 +7459,33 @@ const StudyMaterialModal = ({
       bottom: 0,
       backgroundColor: "rgba(0, 0, 0, 0.75)",
       display: "flex",
-      alignItems: "flex-start", // changed to start at the very top
+      alignItems: isMobile ? "center" : "flex-start",
       justifyContent: "center",
       zIndex: 10000,
-      padding: 0,
-      paddingTop: 0, // ensure no extra gap at top
+      padding: isMobile ? "0" : "0px",
       animation: "fadeIn 0.3s ease",
     },
     modal: {
       backgroundColor: "#f8fafc",
       backgroundImage: svgBgPattern,
-      width: "98%",
-      // Removed top/bottom offsets so modal can start flush at top
-      margin: "0", // flush to top
-      maxHeight: "100%", // allow full height if needed
+      width: "100%",
+      height: isMobile ? "100%" : "100%",
+      margin: isMobile ? "0" : "0 24px 24px 24px",
       display: "flex",
       flexDirection: "column",
       position: "relative",
       boxShadow: "0 15px 50px -10px rgba(0, 0, 0, 0.3)",
       animation: "slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
       overflow: "hidden",
-      // Keep top corners sharp so it's flush with viewport top
-      borderRadius: "0 0 20px 20px",
+      borderRadius: isMobile ? "0" : "0 0 0px 0px",
     },
     header: {
       background: isMobile
         ? "#004999"
         : "linear-gradient(135deg, #0066CC 0%, #004999 50%, #003366 100%)",
-      padding: isMobile ? "24px 20px" : "32px 28px",
+      padding: isMobile ? "20px 20px" : "32px 28px",
       position: "relative",
       overflow: "hidden",
-      // No border radius for the header to maintain sharp top corners
       flexShrink: 0,
     },
     decorativePattern: {
@@ -7516,24 +7518,24 @@ const StudyMaterialModal = ({
     },
     headerContent: { position: "relative", zIndex: 1 },
     iconWrapper: {
-      width: isMobile ? "52px" : "64px",
-      height: isMobile ? "52px" : "64px",
+      width: isMobile ? "48px" : "64px",
+      height: isMobile ? "48px" : "64px",
       background: "rgba(255, 255, 255, 0.15)",
       borderRadius: "18px",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      marginBottom: isMobile ? "12px" : "16px",
+      marginBottom: isMobile ? "10px" : "16px",
       border: "1px solid rgba(255, 255, 255, 0.25)",
       boxShadow:
         "0 8px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
       animation: "float 3s ease-in-out infinite",
     },
     title: {
-      fontSize: isMobile ? "1.5rem" : "2rem",
+      fontSize: isMobile ? "1.3rem" : "2rem",
       fontWeight: "800",
       color: "#ffffff",
-      marginBottom: "8px",
+      marginBottom: "6px",
       lineHeight: "1.2",
       textAlign: "left",
       fontFamily: "'Montserrat', 'Inter', sans-serif",
@@ -7541,7 +7543,7 @@ const StudyMaterialModal = ({
       textShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
     },
     subtitle: {
-      fontSize: isMobile ? "0.85rem" : "0.95rem",
+      fontSize: isMobile ? "0.8rem" : "0.95rem",
       color: "rgba(255, 255, 255, 0.92)",
       fontWeight: "500",
       margin: 0,
@@ -7550,23 +7552,28 @@ const StudyMaterialModal = ({
       maxWidth: "90%",
     },
     body: {
-      padding: isMobile ? "20px 16px" : "28px",
+      padding: isMobile ? "16px" : "28px",
       flex: 1,
       overflowY: "auto",
+      overflowX: "hidden",
       display: "flex",
       flexDirection: "column",
-      gap: isMobile ? "20px" : "24px",
+      gap: isMobile ? "16px" : "24px",
+      minHeight: 0,
+      scrollbarWidth: "none",
+      msOverflowStyle: "none",
     },
     orderInfoCard: {
       background: isMobile
         ? "#e0f2fe"
         : "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)",
-      padding: isMobile ? "18px" : "22px",
+      padding: isMobile ? "16px" : "22px",
       borderRadius: "16px",
       border: "1px solid #bae6fd",
       position: "relative",
       overflow: "hidden",
       boxShadow: "0 4px 12px rgba(14, 165, 233, 0.08)",
+      flexShrink: 0,
     },
     orderInfoContent: { position: "relative", zIndex: 1 },
     orderInfoTitle: {
@@ -7605,7 +7612,7 @@ const StudyMaterialModal = ({
         ? "#ffffff"
         : "linear-gradient(135deg, #ffffff 0%, #ffffff 100%)",
       borderRadius: "20px",
-      padding: isMobile ? "28px 20px" : "40px 32px",
+      padding: isMobile ? "20px 16px" : "40px 32px",
       border: "1px solid #e2e8f0",
       boxShadow: "0 4px 16px rgba(0, 0, 0, 0.06)",
       display: "flex",
@@ -7613,7 +7620,8 @@ const StudyMaterialModal = ({
       justifyContent: "center",
       position: "relative",
       overflow: "hidden",
-      minHeight: isMobile ? "450px" : "350px",
+      minHeight: isMobile ? "auto" : "auto",
+      flexShrink: 0,
     },
     journeyBg: {
       position: "absolute",
@@ -7627,10 +7635,10 @@ const StudyMaterialModal = ({
     },
     journeyTitle: {
       textAlign: "center",
-      fontSize: isMobile ? "1.15rem" : "1.3rem",
+      fontSize: isMobile ? "1rem" : "1.3rem",
       fontWeight: "700",
       color: "#1e293b",
-      marginBottom: isMobile ? "32px" : "48px",
+      marginBottom: isMobile ? "20px" : "32px",
       fontFamily: "'Montserrat', 'Inter', sans-serif",
       position: "relative",
       zIndex: 1,
@@ -7638,44 +7646,29 @@ const StudyMaterialModal = ({
     },
     journeyVisuals: {
       position: "relative",
-      minHeight: isMobile ? "380px" : "240px",
+      minHeight: "auto",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       zIndex: 1,
-    },
-    svgContainer: {
-      position: "absolute",
-      top: "50%",
-      left: "50%",
-      transform: "translate(-50%, -50%)",
-      width: "100%",
-      height: "100%",
-      pointerEvents: "none",
-    },
-    journeyPath: {
-      stroke: "url(#pathGradient)",
-      strokeWidth: isMobile ? "2.5" : "3",
-      fill: "none",
-      strokeDasharray: 1500,
-      strokeDashoffset: 1500,
-      animation: "drawPath 2.5s ease-out 0.5s forwards",
+      paddingBottom: isMobile ? "20px" : "0",
     },
     journeyStages: {
       position: "relative",
       display: "flex",
       flexDirection: isMobile ? "column" : "row",
-      justifyContent: isMobile ? "center" : "space-between",
+      justifyContent: isMobile ? "center" : "space-around",
       alignItems: "center",
       zIndex: 2,
-      padding: isMobile ? "0" : "0 20px",
-      gap: isMobile ? "48px" : "0",
+      padding: isMobile ? "0" : "20px 40px",
+      gap: isMobile ? "24px" : "40px",
+      width: "100%",
     },
     journeyStage: {
       display: "flex",
       flexDirection: isMobile ? "row" : "column",
       alignItems: "center",
-      gap: isMobile ? "20px" : "16px",
+      gap: isMobile ? "16px" : "12px",
       textAlign: isMobile ? "left" : "center",
       opacity: 0,
       transform: "translateY(20px)",
@@ -7686,8 +7679,8 @@ const StudyMaterialModal = ({
       maxWidth: isMobile ? "280px" : "none",
     },
     journeyIcon: {
-      width: isMobile ? "168px" : "172px",
-      height: isMobile ? "168px" : "172px",
+      width: isMobile ? "70px" : "80px",
+      height: isMobile ? "70px" : "80px",
       borderRadius: "50%",
       flexShrink: 0,
       border: "3px solid #e2e8f0",
@@ -7717,7 +7710,7 @@ const StudyMaterialModal = ({
       flex: isMobile ? 1 : "none",
     },
     journeyLabel: {
-      fontSize: isMobile ? "0.95rem" : "0.85rem",
+      fontSize: isMobile ? "0.9rem" : "0.85rem",
       fontWeight: "700",
       color: "#475569",
       transition: "color 0.3s ease",
@@ -7727,7 +7720,7 @@ const StudyMaterialModal = ({
       letterSpacing: "0.03em",
     },
     journeySubtext: {
-      fontSize: isMobile ? "0.75rem" : "0.7rem",
+      fontSize: isMobile ? "0.7rem" : "0.7rem",
       color: "#94a3b8",
       fontWeight: "500",
       marginTop: "4px",
@@ -7737,16 +7730,17 @@ const StudyMaterialModal = ({
       flexDirection: "column",
       alignItems: "center",
       gap: isMobile ? "12px" : "16px",
-      padding: isMobile ? "20px 16px" : "24px",
+      padding: isMobile ? "18px 16px" : "24px",
       background: isMobile
         ? "#fef3c7"
         : "linear-gradient(135deg, #fefce8 0%, #fef3c7 100%)",
       borderRadius: "16px",
       border: "1px solid #fde047",
-      marginTop: "auto",
+      marginTop: isMobile ? "auto" : "0",
       boxShadow: "0 4px 12px rgba(250, 204, 21, 0.15)",
       position: "relative",
       overflow: "hidden",
+      flexShrink: 0,
     },
     downloadSectionGlow: {
       position: "absolute",
@@ -7778,20 +7772,20 @@ const StudyMaterialModal = ({
       display: "inline-flex",
       alignItems: "center",
       gap: isMobile ? "10px" : "12px",
-      padding: isMobile ? "14px 32px" : "16px 40px",
+      padding: isMobile ? "12px 28px" : "16px 40px",
       background: isMobile
         ? "#004999"
         : "linear-gradient(135deg, #0066CC 0%, #004999 100%)",
       color: "#ffffff",
       border: "none",
       borderRadius: "14px",
-      fontSize: isMobile ? "0.9rem" : "1rem",
+      fontSize: isMobile ? "0.85rem" : "1rem",
       fontWeight: "700",
       cursor: "pointer",
       transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       boxShadow:
         "0 8px 20px rgba(0, 102, 204, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
-      minWidth: isMobile ? "200px" : "220px",
+      minWidth: isMobile ? "180px" : "220px",
       justifyContent: "center",
       fontFamily: "'Montserrat', 'Inter', sans-serif",
       textTransform: "uppercase",
@@ -7811,48 +7805,35 @@ const StudyMaterialModal = ({
   };
 
   const styleSheet = `
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes slideIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
-    @keyframes drawPath { to { stroke-dashoffset: 0; } }
-    @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
-    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
-    
-    .journey-stage { animation: fadeInUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-    .journey-stage:nth-child(1) { animation-delay: 0.8s; }
-    .journey-stage:nth-child(2) { animation-delay: 1.1s; }
-    .journey-stage:nth-child(3) { animation-delay: 1.4s; }
-    
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
+  @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+  
+  .journey-stage { animation: fadeInUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  .journey-stage:nth-child(1) { animation-delay: 0.3s; }
+  .journey-stage:nth-child(2) { animation-delay: 0.5s; }
+  .journey-stage:nth-child(3) { animation-delay: 0.7s; }
+  
+  .journey-stage:hover .journey-icon { 
+    transform: scale(1.1) translateY(-4px); 
+    box-shadow: 0 10px 30px rgba(0, 102, 204, 0.2);
+  }
+  .journey-stage:hover .journey-label { color: #0f172a; }
+  
+  /* Hide scrollbar for all browsers */
+  .modal-body::-webkit-scrollbar {
+    display: none;
+  }
+  
+  @media (max-width: 768px) {
     .journey-stage:hover .journey-icon { 
-      transform: scale(1.1) translateY(-4px); 
-      box-shadow: 0 10px 30px rgba(0, 102, 204, 0.2);
+      transform: scale(1.05); 
     }
-    .journey-stage:hover .journey-label { color: #0f172a; }
-    
-    @media (max-width: 768px) {
-      .journey-stage:hover .journey-icon { 
-        transform: scale(1.05); 
-      }
-    }
-  `;
-
-  // Mobile path is shifted left. Desktop path is unchanged.
-  const pathData = isMobile
-    ? "M 180 50 Q 200 150, 180 250 T 180 450"
-    : "M 100 100 Q 250 60, 400 100 T 700 100";
-  // Mobile circle positions are also shifted left to match the path.
-  const circlePositions = isMobile
-    ? [
-        { cx: 180, cy: 50 },
-        { cx: 180, cy: 250 },
-        { cx: 180, cy: 450 },
-      ]
-    : [
-        { cx: 100, cy: 100 },
-        { cx: 400, cy: 100 },
-        { cx: 700, cy: 100 },
-      ];
+  }
+`;
 
   const journeyIconStyles = [
     {
@@ -7909,7 +7890,7 @@ const StudyMaterialModal = ({
             </div>
           </div>
 
-          <div style={styles.body}>
+          <div style={styles.body} className="modal-body">
             <div style={styles.orderInfoCard}>
               <div style={styles.orderInfoContent}>
                 <div style={styles.orderInfoTitle}>
@@ -8028,65 +8009,12 @@ const StudyMaterialModal = ({
               <div style={styles.journeyBg}></div>
               <h3 style={styles.journeyTitle}>Your Learning Journey</h3>
               <div style={styles.journeyVisuals}>
-                <svg
-                  style={styles.svgContainer}
-                  viewBox={isMobile ? "0 0 400 500" : "0 0 800 200"}
-                  preserveAspectRatio="xMidYMid meet"
-                >
-                  <defs>
-                    <linearGradient
-                      id="pathGradient"
-                      x1="0%"
-                      y1={isMobile ? "0%" : "0%"}
-                      x2={isMobile ? "0%" : "100%"}
-                      y2={isMobile ? "100%" : "0%"}
-                    >
-                      <stop
-                        offset="0%"
-                        style={{ stopColor: "#10b981", stopOpacity: 1 }}
-                      />
-                      <stop
-                        offset="50%"
-                        style={{ stopColor: "#3b82f6", stopOpacity: 1 }}
-                      />
-                      <stop
-                        offset="100%"
-                        style={{ stopColor: "#f59e0b", stopOpacity: 1 }}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <path d={pathData} style={styles.journeyPath} />
-                  {circlePositions.map((pos, idx) => (
-                    <circle
-                      key={idx}
-                      cx={pos.cx}
-                      cy={pos.cy}
-                      r="8"
-                      fill={
-                        idx === 0
-                          ? "#10b981"
-                          : idx === 1
-                          ? "#3b82f6"
-                          : "#f59e0b"
-                      }
-                      opacity="0"
-                    >
-                      <animate
-                        attributeName="opacity"
-                        values="0;1;1"
-                        dur="2s"
-                        begin={`${0.8 + idx * 0.3}s`}
-                        fill="freeze"
-                      />
-                    </circle>
-                  ))}
-                </svg>
                 <div style={styles.journeyStages}>
                   <div className="journey-stage" style={styles.journeyStage}>
                     <div className="journey-icon" style={journeyIconStyles[0]}>
                       <div style={styles.journeyIconInner}>
                         <FaBookOpen
-                          size={isMobile ? 100 : 60}
+                          size={isMobile ? 32 : 36}
                           color="#10b981"
                         />
                       </div>
@@ -8107,7 +8035,7 @@ const StudyMaterialModal = ({
                     <div className="journey-icon" style={journeyIconStyles[1]}>
                       <div style={styles.journeyIconInner}>
                         <FaGraduationCap
-                          size={isMobile ? 100 : 60}
+                          size={isMobile ? 32 : 36}
                           color="#3b82f6"
                         />
                       </div>
@@ -8125,7 +8053,7 @@ const StudyMaterialModal = ({
                   <div className="journey-stage" style={styles.journeyStage}>
                     <div className="journey-icon" style={journeyIconStyles[2]}>
                       <div style={styles.journeyIconInner}>
-                        <FaTrophy size={isMobile ? 100 : 60} color="#f59e0b" />
+                        <FaTrophy size={isMobile ? 32 : 36} color="#f59e0b" />
                       </div>
                     </div>
                     <div style={styles.journeyTextWrapper}>
@@ -8141,7 +8069,6 @@ const StudyMaterialModal = ({
                 </div>
               </div>
             </div>
-            {/* dd */}
 
             <div style={styles.downloadSection}>
               <div style={styles.downloadSectionGlow}></div>
@@ -8201,11 +8128,9 @@ const DashboardSection = ({ id, activeSection, orders, loading, setView }) => {
       fontSize: "1rem",
       fontWeight: "500",
     },
-    // ====================================================== //
-    // =========== NEW SUBTLE "EMPTY STATE" STYLES ============ //
-    // ====================================================== //
+
     noOrdersContainer: {
-      backgroundColor: "transparent", // No bright background
+      backgroundColor: "transparent",
       borderRadius: "var(--border-radius-lg)",
       padding: "clamp(2.5rem, 8vw, 4rem)",
       textAlign: "center",
@@ -8286,9 +8211,6 @@ const DashboardSection = ({ id, activeSection, orders, loading, setView }) => {
             ))}
           </div>
         ) : (
-          // ====================================================== //
-          // ======== UPDATED "EMPTY" VIEW WITH NEW STYLES ======== //
-          // ====================================================== //
           <div style={styles.noOrdersContainer}>
             <FaShoppingCart style={styles.noOrdersIcon} />
             <h3 style={styles.noOrdersTitle}>Your Order History is Empty</h3>
