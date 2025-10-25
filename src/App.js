@@ -6063,12 +6063,12 @@ const PaymentModal = ({ isOpen, onClose, amount, orderTotal }) => {
     },
     modal: {
       backgroundColor: "#ffffff",
-      borderRadius: "0 0 28px 28px",
+      // borderRadius: "0 0 28px 28px",
       padding: "0",
-      width: "98%",
-      height: "98%", // Set height to 100%
-      maxHeight: "98%", // Set max-height to 100%
-      margin: "0 24 24 24", // Remove fixed bottom margin
+      width: "100%",
+      height: "100%", // Set height to 100%
+      maxHeight: "100%", // Set max-height to 100%
+      // margin: "0 24 24 24", 
       display: "flex",
       flexDirection: "column",
       position: "relative",
