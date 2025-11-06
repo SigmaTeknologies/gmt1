@@ -14,6 +14,9 @@ import { createClient } from "@supabase/supabase-js";
 import { GlobalStyles } from "./GlobalStyles"; // Import global styles
 // Import specific icons from react-icons/fa for Font Awesome
 import {
+  FaUniversity,
+  FaLock,
+  FaShieldAlt,
   FaTrophy,
   FaGraduationCap,
   FaBook,
@@ -70,10 +73,7 @@ import Lottie from "lottie-react";
 import JSZip from "jszip";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics } from "@vercel/analytics/react";
-
-// NOTE: Hardcoded data import has been removed.
-// All data is now fetched from Supabase.
-import { aboutUsData } from "./appData"; // Kept for About Us as it's complex and not in the initial schema request. Can be made dynamic later.
+import { aboutUsData } from "./appData";
 
 const navLinksData = [
   { id: "home", text: "Home", type: "link" },
@@ -93,341 +93,6 @@ const navLinksData = [
   { id: "about", text: "About Us", type: "link" },
   { id: "contact", text: "Contact", type: "link" },
 ];
-
-// --- Banking Details Component ---
-const BankingDetails = () => {
-  const [isCopied, setIsCopied] = useState(false);
-  const accountNumber = "62793528830"; // Store account number for easy access
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(accountNumber).then(() => {
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
-    });
-  };
-
-  return (
-    <>
-      <style>{`
-        /* --- Animation --- */
-        @keyframes float-animation {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-12px); }
-        }
-
-        .banking-details-card {
-          background: #ffffff;
-          border-radius: 16px;
-          border: 1px solid #e2e8f0;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-          overflow: hidden;
-          font-family: 'Inter', sans-serif;
-        }
-
-        /* --- Main Two-Column Grid --- */
-        .card-body-grid {
-          display: grid;
-          grid-template-columns: 1.2fr 1fr; /* 55% for details, 45% for illustration */
-        }
-
-        /* --- Details Column (Left) --- */
-        .details-column {
-          /* This column will contain all the textual information */
-        }
-        
-        .card-header {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 16px 24px;
-          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-          border-bottom: 1px solid #e2e8f0;
-          color: #1e293b;
-        }
-
-        .card-header h4 {
-          margin: 0;
-          font-size: 1.1rem;
-          font-weight: 600;
-        }
-        
-        .card-header svg {
-           color: #005A9C;
-        }
-
-        .card-content {
-          padding: 24px;
-        }
-
-        .card-content p {
-          font-size: 0.9rem;
-          color: #475569;
-          line-height: 1.6;
-          margin-top: 0;
-          margin-bottom: 24px;
-        }
-
-        .details-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 20px 24px;
-        }
-
-        .detail-item {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .detail-item .label {
-          font-size: 0.75rem;
-          font-weight: 500;
-          color: #64748b;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-
-        .detail-item .value {
-          font-size: 1rem;
-          font-weight: 600;
-          color: #0f172a;
-        }
-        
-        .account-number-wrapper {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 8px;
-        }
-
-        .account-number-value {
-          font-family: 'Roboto Mono', monospace;
-          font-size: 1.1rem;
-          letter-spacing: 1px;
-        }
-
-        .copy-button {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          background: #f1f5f9;
-          border: 1px solid #e2e8f0;
-          color: #475569;
-          padding: 8px;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .copy-button:hover {
-          background: #e2e8f0;
-          color: #1e293b;
-        }
-        
-        .copy-button.copied {
-          background-color: #dcfce7;
-          border-color: #86efac;
-          color: #166534;
-        }
-
-        .card-footer {
-          display: flex;
-          align-items: flex-start;
-          gap: 10px;
-          background: #f0f9ff;
-          padding: 16px 24px;
-          border-top: 1px solid #e2e8f0;
-        }
-        
-        .card-footer svg {
-          color: #0284c7;
-          margin-top: 3px;
-          flex-shrink: 0;
-        }
-        
-        .card-footer .status-note {
-          margin: 0;
-          font-size: 0.85rem;
-          color: #0369a1;
-          line-height: 1.5;
-        }
-
-        /* --- Illustration Column (Right) --- */
-        .illustration-column {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(160deg, #f0f9ff 0%, #e0f2fe 100%);
-          border-left: 1px solid #e2e8f0;
-          padding: 32px;
-          overflow: hidden;
-        }
-        
-        .wallet-illustration {
-           width: 100%;
-           max-width: 250px;
-           height: auto;
-           animation: float-animation 4s ease-in-out infinite;
-        }
-
-        /* --- Responsive Adjustments --- */
-        @media (max-width: 900px) {
-          .card-body-grid {
-            grid-template-columns: 1fr; /* Stack columns */
-          }
-          
-          .illustration-column {
-            order: -1; /* Move illustration to the top */
-            border-left: none;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 40px 24px;
-          }
-        }
-      
-        @media (max-width: 600px) {
-          .details-grid {
-            grid-template-columns: 1fr;
-            gap: 16px;
-          }
-          
-          .card-content {
-            padding: 16px;
-          }
-          
-          .card-header, .card-footer {
-            padding: 12px 16px;
-          }
-        }
-      `}</style>
-
-      <div className="banking-details-card">
-        <div className="card-body-grid">
-          {/* --- Illustration Column --- */}
-          <div className="illustration-column">
-            <svg
-              className="wallet-illustration"
-              viewBox="0 0 200 180"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <g>
-                {/* Background shapes */}
-                <circle cx="150" cy="40" r="50" fill="#bae6fd" opacity="0.5" />
-                <circle cx="50" cy="140" r="40" fill="#bfdbfe" opacity="0.5" />
-
-                {/* Wallet Body */}
-                <path
-                  d="M20 60C20 54.4772 24.4772 50 30 50H170C175.523 50 180 54.4772 180 60V140C180 145.523 175.523 150 170 150H30C24.4772 150 20 145.523 20 140V60Z"
-                  fill="#005A9C"
-                />
-                <path
-                  d="M20 70H180V80C180 85.5228 175.523 90 170 90H30C24.4772 90 20 85.5228 20 80V70Z"
-                  fill="#003d6b"
-                />
-
-                {/* Credit Card */}
-                <g transform="translate(40, 20) rotate(-10, 80, 50)">
-                  <rect
-                    x="40"
-                    y="20"
-                    width="120"
-                    height="70"
-                    rx="8"
-                    fill="#ffffff"
-                    stroke="#e0e7ff"
-                    strokeWidth="2"
-                  />
-                  <rect
-                    x="50"
-                    y="65"
-                    width="60"
-                    height="10"
-                    rx="3"
-                    fill="#cbd5e1"
-                  />
-                  <rect
-                    x="130"
-                    y="68"
-                    width="20"
-                    height="5"
-                    rx="2"
-                    fill="#94a3b8"
-                  />
-                  <circle cx="145" cy="35" r="8" fill="#fbbf24" />
-                  <circle cx="135" cy="35" r="8" fill="#f87171" opacity="0.8" />
-                </g>
-
-                {/* Success Checkmark */}
-                <circle cx="165" cy="135" r="15" fill="#34d399" />
-                <path
-                  d="M160 135L164 139L170 133"
-                  stroke="white"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </g>
-            </svg>
-          </div>
-
-          {/* --- Details Column --- */}
-          <div className="details-column">
-            <div className="card-header">
-              <FaCreditCard size="1.2em" />
-              <h4>Payment Information (EFT)</h4>
-            </div>
-            <div className="card-content">
-              <p>
-                Please make your payment to the bank account below. Use your{" "}
-                <strong>Order ID</strong> as the payment reference.
-              </p>
-              <div className="details-grid">
-                <div className="detail-item">
-                  <span className="label">Bank</span>
-                  <span className="value">FNB (First National Bank)</span>
-                </div>
-                <div className="detail-item">
-                  <span className="label">Account Holder</span>
-                  <span className="value">GMT Safety Solutions (Pty) Ltd</span>
-                </div>
-                <div className="detail-item">
-                  <span className="label">Account Number</span>
-                  <div className="account-number-wrapper">
-                    <span className="value account-number-value">
-                      {accountNumber}
-                    </span>
-                    <button
-                      onClick={handleCopy}
-                      className={`copy-button ${isCopied ? "copied" : ""}`}
-                      title={isCopied ? "Copied!" : "Copy to clipboard"}
-                    >
-                      {isCopied ? <FaCheck /> : <FaRegCopy />}
-                    </button>
-                  </div>
-                </div>
-                <div className="detail-item">
-                  <span className="label">Branch Code</span>
-                  <span className="value">250655 (Welkom)</span>
-                </div>
-                <div className="detail-item">
-                  <span className="label">Account Type</span>
-                  <span className="value">Cheque</span>
-                </div>
-              </div>
-            </div>
-            <div className="card-footer">
-              <FaInfoCircle />
-              <p className="status-note">
-                Your order status will be updated to "Processing" once payment
-                is confirmed.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-};
 
 const StyleInjector = ({ css }) => {
   useEffect(() => {
@@ -723,8 +388,8 @@ function App() {
     if (!supabase) return;
     await supabase.auth.signOut();
     setView("home");
-    setAuthEvent(null);
-    addToast("You have been signed out.", "info");
+    setAuthEvent(null); // Reset auth event on sign out
+    addToast("Signed out.", "info");
   }, [addToast, setView]);
 
   const featuredCourses = useMemo(
@@ -772,11 +437,7 @@ function App() {
         if (testimonialsRes.error) throw testimonialsRes.error;
         setTestimonials(testimonialsRes.data);
       } catch (error) {
-        console.error("Error fetching initial data:", error);
-        addToast(
-          "Could not load site content. Please try again later.",
-          "error"
-        );
+        addToast("Content load failed.", "error");
       } finally {
         setIsLoading(false);
       }
@@ -931,14 +592,14 @@ function App() {
 
     if (authEvent === "PASSWORD_RECOVERY" && view !== "update-password") {
       setView("update-password");
-      addToast("Please update your password before continuing.", "info");
+      addToast("Please update password.", "info");
       return;
     }
 
     if (!session && protectedRoutes.includes(view)) {
       if (view === "checkout" && cart.length > 0) setViewAfterLogin("checkout");
-      setView("login");
-      addToast("Please sign in to continue.", "info");
+      setView("login"); // Redirect to login for protected routes
+      addToast("Please sign in.", "info");
       return;
     }
     if (session && authRoutes.includes(view)) {
@@ -1019,13 +680,10 @@ function App() {
             : item
         )
       );
-      addToast("Quantity updated in cart.", "info");
+      addToast("Cart updated.", "info");
     } else {
-      setCart((prevCart) => [
-        ...prevCart,
-        { ...courseToAdd, quantity: 1, image_url: courseToAdd.image_url },
-      ]);
-      addToast(`${courseToAdd.title} added to cart!`, "success");
+      setCart((prevCart) => [...prevCart, { ...courseToAdd, quantity: 1 }]);
+      addToast("Course added to cart.", "success");
     }
   };
 
@@ -1036,8 +694,7 @@ function App() {
   const removeFromCartHandler = (courseId) => {
     const removedItem = cart.find((item) => item.id === courseId);
     setCart((prevCart) => prevCart.filter((item) => item.id !== courseId));
-    if (removedItem)
-      addToast(`${removedItem.title} removed from cart.`, "info");
+    if (removedItem) addToast("Course removed.", "info");
   };
 
   const handleCheckout = () => {
@@ -3467,22 +3124,28 @@ const ContactSection = ({
   const formatSAPHoneNumber = (phone) => {
     if (!phone) return "";
     let digits = phone.toString().replace(/\D/g, "");
+
+    // Assume all incoming numbers without a country code are South African and prepend +27
     if (digits.length === 10 && digits.startsWith("0")) {
       digits = "27" + digits.substring(1);
-    } else if (digits.length === 11 && digits.startsWith("27")) {
-      // Correct format
-    } else if (digits.length > 11) {
-      return phone;
-    } else {
-      return phone;
+    } else if (digits.length === 9 && !digits.startsWith("0")) {
+      // Handles cases like 721234567 -> 27721234567
+      digits = "27" + digits;
     }
-    if (digits.length === 11) {
-      return `+${digits.slice(0, 2)} ${digits.slice(2, 4)} ${digits.slice(
-        4,
-        7
-      )} ${digits.slice(7, 11)}`;
+
+    // Ensure it starts with a '+' for the href
+    if (!digits.startsWith("+")) {
+      digits = "+" + digits;
     }
-    return phone;
+
+    // Format for display (example for +27 72 123 4567)
+    if (digits.length === 12 && digits.startsWith("+27")) {
+      return `+${digits.slice(1, 3)} ${digits.slice(3, 5)} ${digits.slice(
+        5,
+        8
+      )} ${digits.slice(8, 12)}`;
+    }
+    return digits; // Return as is if it doesn't match expected SA format
   };
 
   const getUserName = (user) => {
@@ -3527,6 +3190,7 @@ const ContactSection = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!supabaseClient) {
+      addToast("Supabase client not initialized.", "error");
       return;
     }
     setIsSubmitting(true);
@@ -3536,19 +3200,12 @@ const ContactSection = ({
         .insert([{ ...formData, phone: formData.phone || null }]);
       if (error) throw error;
 
-      // ====================================================== //
-      // ============== THIS IS THE ONLY CHANGE =============== //
-      // We are updating the success message to be more specific.
-      // ====================================================== //
-      addToast(
-        "Message sent! You will receive a reply via email shortly.",
-        "success"
-      );
+      addToast("Message sent!", "success");
 
       setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
     } catch (error) {
-      console.error("Supabase form submission error:", error.message);
-      addToast(`Error: ${error.message}`, "error"); // Also improved error message
+      console.error("Error sending message:", error);
+      addToast("Send failed.", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -3906,7 +3563,11 @@ const ContactSection = ({
                     {location.phone && (
                       <p>
                         <FaPhoneAlt />{" "}
-                        <a href={`tel:${location.phone}`}>
+                        <a
+                          href={`tel:${formatSAPHoneNumber(
+                            location.phone
+                          ).replace(/\s/g, "")}`}
+                        >
                           {formatSAPHoneNumber(location.phone)}
                         </a>
                       </p>
@@ -3931,7 +3592,6 @@ const ContactSection = ({
     </section>
   );
 };
-
 // This hook should be present in your file, right after the imports
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -4087,9 +3747,9 @@ const AuthSection = ({
     });
 
     if (error) {
-      addToast(error.message, "error");
+      addToast("Wrong login details.", "error");
     } else {
-      addToast("Signed in successfully!", "success");
+      addToast("Signed in.", "success");
       // IMPORTANT: After a successful login with a custom client,
       // you must reload the page to ensure the entire app
       // is now using the same session from localStorage.
@@ -4104,14 +3764,11 @@ const AuthSection = ({
   const handleSignUp = async (e) => {
     e.preventDefault();
     if (emailExists) {
-      addToast(
-        "This email is already registered. Please log in or reset your password.",
-        "error"
-      );
+      addToast("Email already registered.", "error");
       return;
     }
     if (!isPasswordStrong) {
-      addToast("Please create a stronger password.", "error");
+      addToast("Password not strong.", "error");
       return;
     }
     setLoading(true);
@@ -4130,10 +3787,10 @@ const AuthSection = ({
     });
 
     if (error) {
-      addToast(error.message, "error");
+      addToast("Sign up failed. Please try again.", "error");
     } else {
       setMessage("Please check your email to verify your account.");
-      addToast("Verification email sent!", "info");
+      addToast("Verification sent.", "info");
     }
     setLoading(false);
   };
@@ -4541,7 +4198,7 @@ const PasswordResetSection = ({
     });
 
     if (error) {
-      addToast(error.message, "error");
+      addToast("Reset failed. Please try again.", "error");
     } else {
       // UPDATED LOGIC: Instead of redirecting, show the confirmation screen.
       setIsSubmitted(true);
@@ -4786,10 +4443,7 @@ const UpdatePasswordSection = ({
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
     if (!isPasswordStrong) {
-      addToast(
-        "Please create a stronger password that meets all criteria.",
-        "error"
-      );
+      addToast("Password not strong.", "error");
       return;
     }
     setLoading(true);
@@ -4797,10 +4451,7 @@ const UpdatePasswordSection = ({
     if (error) {
       addToast(error.message, "error");
     } else {
-      addToast(
-        "Password updated successfully! You can now sign in.",
-        "success"
-      );
+      addToast("Password updated.", "success");
       setView("login");
     }
     setLoading(false);
@@ -5111,9 +4762,9 @@ const AccountSection = ({
       },
     });
     if (error) {
-      addToast(`Failed to update details: ${error.message}`, "error");
+      addToast("Update failed.", "error");
     } else {
-      addToast("Account details updated successfully!", "success");
+      addToast("Details updated.", "success");
       setInitialDetails({
         ...details,
         firstName: details.firstName.trim(),
@@ -5126,27 +4777,21 @@ const AccountSection = ({
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      addToast("Passwords do not match.", "error");
+      addToast("Passwords don't match.", "error");
       return;
     }
     if (!isPasswordStrong) {
-      addToast(
-        "Password is not strong enough. Please meet all criteria.",
-        "error"
-      );
+      addToast("Password not strong.", "error");
       return;
     }
     setPasswordLoading(true);
     const { error } = await supabaseClient.auth.updateUser({ password });
 
     if (error) {
-      addToast(error.message, "error");
+      addToast("Update failed.", "error");
       setPasswordLoading(false);
     } else {
-      addToast(
-        "Password updated! For security, you will be signed out.",
-        "success"
-      );
+      addToast("Password updated.", "success");
       setTimeout(async () => {
         await supabaseClient.auth.signOut();
       }, 2000);
@@ -5159,7 +4804,7 @@ const AccountSection = ({
   const handleConfirmDelete = async (e) => {
     e.preventDefault();
     if (!deletePassword) {
-      addToast("Please enter your password to confirm.", "error");
+      addToast("Enter password to confirm.", "error");
       return;
     }
     setIsDeleting(true);
@@ -5174,7 +4819,7 @@ const AccountSection = ({
     );
 
     if (signInError) {
-      addToast("Incorrect password. Account not deleted.", "error");
+      addToast("Incorrect password.", "error");
       setIsDeleting(false);
       return;
     }
@@ -5186,15 +4831,10 @@ const AccountSection = ({
     );
 
     if (deleteError) {
-      addToast(`Error deleting account data: ${deleteError.message}`, "error");
+      addToast("Deletion failed.", "error");
       setIsDeleting(false);
     } else {
-      // Step 3: If the database cleanup is successful, sign the user out.
-      // The `onAuthStateChange` listener in App.js will handle the UI redirect.
-      addToast(
-        "Your account and data have been successfully deleted.",
-        "success"
-      );
+      addToast("Account deleted.", "success");
       await supabaseClient.auth.signOut();
       // No need to set more state here as the component will unmount.
     }
@@ -6055,7 +5695,354 @@ const PasswordDemo = () => {
   );
 };
 
-const PaymentModal = ({ isOpen, onClose }) => {
+const BankingDetails = () => {
+  const [isCopied, setIsCopied] = useState(false);
+  const accountNumber = "62793528830";
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(accountNumber).then(() => {
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    });
+  };
+
+  return (
+    <>
+      <style>{`
+        /* --- Animation --- */
+        @keyframes float-animation {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-12px); }
+        }
+
+        .banking-details-card {
+          background: #ffffff;
+          /* Removed top/left/right margins, set width to 98% and centered */
+          width: 98%; 
+          margin: 0 auto; /* 0 top/bottom margin, auto for left/right to center */
+          border-radius: 16px; /* Keep overall border-radius */
+          border: 1px solid #e2e8f0;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+          overflow: hidden;
+          font-family: 'Inter', sans-serif;
+        }
+
+        /* --- Main Two-Column Grid --- */
+        .card-body-grid {
+          display: grid;
+          grid-template-columns: 1.2fr 1fr; /* 55% for details, 45% for illustration */
+        }
+
+        /* --- Details Column (Left) --- */
+        .details-column {
+          /* This column will contain all the textual information */
+        }
+        
+        .card-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 16px 24px;
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+          border-bottom: 1px solid #e2e8f0;
+          color: #1e293b;
+          /* Removed top border-radius */
+          border-radius: 0; 
+        }
+        
+        /* Apply top-left and top-right border-radius to the card itself, but the header should override */
+        .banking-details-card .card-header:first-child {
+            border-top-left-radius: 15px; /* Adjust as needed */
+            border-top-right-radius: 15px; /* Adjust as needed */
+        }
+
+
+        .card-header h4 {
+          margin: 0;
+          font-size: 1.1rem;
+          font-weight: 600;
+        }
+        
+        .card-header svg {
+           color: #005A9C;
+        }
+
+        .card-content {
+          padding: 24px;
+        }
+
+        .card-content p {
+          font-size: 0.9rem;
+          color: #475569;
+          line-height: 1.6;
+          margin-top: 0;
+          margin-bottom: 24px;
+        }
+
+        .details-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 20px 24px;
+        }
+
+        .detail-item {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .detail-item .label {
+          font-size: 0.75rem;
+          font-weight: 500;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .detail-item .value {
+          font-size: 1rem;
+          font-weight: 600;
+          color: #0f172a;
+        }
+        
+        .account-number-wrapper {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+
+        .account-number-value {
+          font-family: 'Roboto Mono', monospace;
+          font-size: 1.1rem;
+          letter-spacing: 1px;
+        }
+
+        .copy-button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: #f1f5f9;
+          border: 1px solid #e2e8f0;
+          color: #475569;
+          padding: 8px;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .copy-button:hover {
+          background: #e2e8f0;
+          color: #1e293b;
+        }
+        
+        .copy-button.copied {
+          background-color: #dcfce7;
+          border-color: #86efac;
+          color: #166534;
+        }
+
+        .card-footer {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          background: #f0f9ff;
+          padding: 16px 24px;
+          border-top: 1px solid #e2e8f0;
+        }
+        
+        .card-footer svg {
+          color: #0284c7;
+          margin-top: 3px;
+          flex-shrink: 0;
+        }
+        
+        .card-footer .status-note {
+          margin: 0;
+          font-size: 0.85rem;
+          color: #0369a1;
+          line-height: 1.5;
+        }
+
+        /* --- Illustration Column (Right) --- */
+        .illustration-column {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(160deg, #f0f9ff 0%, #e0f2fe 100%);
+          border-left: 1px solid #e2e8f0;
+          padding: 32px;
+          overflow: hidden;
+        }
+        
+        .wallet-illustration {
+           width: 100%;
+           max-width: 250px;
+           height: auto;
+           animation: float-animation 4s ease-in-out infinite;
+        }
+
+        /* --- Responsive Adjustments --- */
+        @media (max-width: 900px) {
+          .card-body-grid {
+            grid-template-columns: 1fr; /* Stack columns */
+          }
+          
+          .illustration-column {
+            order: -1; /* Move illustration to the top */
+            border-left: none;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 40px 24px;
+          }
+        }
+      
+        @media (max-width: 600px) {
+          .details-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+          }
+          
+          .card-content {
+            padding: 16px;
+          }
+          
+          .card-header, .card-footer {
+            padding: 12px 16px;
+          }
+        }
+      `}</style>
+
+      <div className="banking-details-card">
+        <div className="card-body-grid">
+          {/* --- Illustration Column --- */}
+          <div className="illustration-column">
+            <svg
+              className="wallet-illustration"
+              viewBox="0 0 200 180"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <g>
+                {/* Background shapes */}
+                <circle cx="150" cy="40" r="50" fill="#bae6fd" opacity="0.5" />
+                <circle cx="50" cy="140" r="40" fill="#bfdbfe" opacity="0.5" />
+
+                {/* Wallet Body */}
+                <path
+                  d="M20 60C20 54.4772 24.4772 50 30 50H170C175.523 50 180 54.4772 180 60V140C180 145.523 175.523 150 170 150H30C24.4772 150 20 145.523 20 140V60Z"
+                  fill="#005A9C"
+                />
+                <path
+                  d="M20 70H180V80C180 85.5228 175.523 90 170 90H30C24.4772 90 20 85.5228 20 80V70Z"
+                  fill="#003d6b"
+                />
+
+                {/* Credit Card */}
+                <g transform="translate(40, 20) rotate(-10, 80, 50)">
+                  <rect
+                    x="40"
+                    y="20"
+                    width="120"
+                    height="70"
+                    rx="8"
+                    fill="#ffffff"
+                    stroke="#e0e7ff"
+                    strokeWidth="2"
+                  />
+                  <rect
+                    x="50"
+                    y="65"
+                    width="60"
+                    height="10"
+                    rx="3"
+                    fill="#cbd5e1"
+                  />
+                  <rect
+                    x="130"
+                    y="68"
+                    width="20"
+                    height="5"
+                    rx="2"
+                    fill="#94a3b8"
+                  />
+                  <circle cx="145" cy="35" r="8" fill="#fbbf24" />
+                  <circle cx="135" cy="35" r="8" fill="#f87171" opacity="0.8" />
+                </g>
+
+                {/* Success Checkmark */}
+                <circle cx="165" cy="135" r="15" fill="#34d399" />
+                <path
+                  d="M160 135L164 139L170 133"
+                  stroke="white"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </g>
+            </svg>
+          </div>
+
+          {/* --- Details Column --- */}
+          <div className="details-column">
+            <div className="card-header">
+              <FaCreditCard size="1.2em" />
+              <h4>Payment Information (EFT)</h4>
+            </div>
+            <div className="card-content">
+              <p>
+                Please make your payment to the bank account below. Use your{" "}
+                <strong>Order ID</strong> as the payment reference.
+              </p>
+              <div className="details-grid">
+                <div className="detail-item">
+                  <span className="label">Bank</span>
+                  <span className="value">FNB (First National Bank)</span>
+                </div>
+                <div className="detail-item">
+                  <span className="label">Account Holder</span>
+                  <span className="value">GMT Safety Solutions (Pty) Ltd</span>
+                </div>
+                <div className="detail-item">
+                  <span className="label">Account Number</span>
+                  <div className="account-number-wrapper">
+                    <span className="value account-number-value">
+                      {accountNumber}
+                    </span>
+                    <button
+                      onClick={handleCopy}
+                      className={`copy-button ${isCopied ? "copied" : ""}`}
+                      title={isCopied ? "Copied!" : "Copy to clipboard"}
+                    >
+                      {isCopied ? <FaCheck /> : <FaRegCopy />}
+                    </button>
+                  </div>
+                </div>
+                <div className="detail-item">
+                  <span className="label">Branch Code</span>
+                  <span className="value">250655 (Welkom)</span>
+                </div>
+                <div className="detail-item">
+                  <span className="label">Account Type</span>
+                  <span className="value">Cheque</span>
+                </div>
+              </div>
+            </div>
+            <div className="card-footer">
+              <FaInfoCircle />
+              <p className="status-note">
+                Your order status will be updated to "Processing" once payment
+                is confirmed.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+const PaymentModal = ({ isOpen, onClose, amount, orderTotal }) => {
+  const displayAmount = typeof amount !== "undefined" ? amount : orderTotal;
   if (!isOpen) return null;
 
   const modalStyles = {
@@ -6068,25 +6055,27 @@ const PaymentModal = ({ isOpen, onClose }) => {
       backgroundColor: "rgba(0, 0, 0, 0.6)",
       backdropFilter: "blur(8px)",
       display: "flex",
-      alignItems: "stretch",
-      justifyContent: "stretch",
+      alignItems: "flex-start", // Align to the top
+      justifyContent: "center",
       zIndex: 10000,
-      padding: "24px",
+      padding: "0",
       animation: "fadeIn 0.2s ease-out",
     },
     modal: {
       backgroundColor: "#ffffff",
-      borderRadius: "28px",
+      // borderRadius: "0 0 28px 28px",
       padding: "0",
       width: "100%",
-      height: "100%",
+      height: "100%", // Set height to 100%
+      maxHeight: "100%", // Set max-height to 100%
+      // margin: "0 24 24 24",
       display: "flex",
       flexDirection: "column",
       position: "relative",
       boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
       border: "1px solid rgba(0, 0, 0, 0.06)",
       animation: "slideIn 0.3s ease-out",
-      overflow: "hidden",
+      overflowY: "hidden", // Hide scroll for the modal container itself
     },
     modalHeader: {
       background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)",
@@ -6094,6 +6083,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
       position: "relative",
       overflow: "hidden",
       flexShrink: 0,
+      borderRadius: "0",
     },
     decorativeCircle1: {
       position: "absolute",
@@ -6169,7 +6159,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
     modalBody: {
       padding: "28px",
       flex: 1,
-      overflowY: "auto",
+      overflowY: "auto", // Allow content within the body to scroll
     },
     infoHeader: {
       display: "flex",
@@ -6241,6 +6231,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
       display: "flex",
       justifyContent: "flex-end",
       flexShrink: 0,
+      borderRadius: "0 0 28px 28px",
     },
     confirmButton: {
       padding: "14px 32px",
@@ -6258,7 +6249,6 @@ const PaymentModal = ({ isOpen, onClose }) => {
     },
   };
 
-  // Add CSS animations and media queries to document head if not already present
   React.useEffect(() => {
     const styleId = "payment-modal-animations";
     if (!document.getElementById(styleId)) {
@@ -6270,25 +6260,30 @@ const PaymentModal = ({ isOpen, onClose }) => {
           to { opacity: 1; }
         }
         @keyframes slideIn {
-          from { 
+          from {
             opacity: 0;
-            transform: scale(0.95);
+            transform: translateY(-20px);
           }
-          to { 
+          to {
             opacity: 1;
-            transform: scale(1);
+            transform: translateY(0);
           }
         }
 
         @media (max-width: 768px) {
           .payment-modal-overlay {
-            padding: 16px !important;
+            padding: 0 !important;
           }
           .payment-modal {
-            border-radius: 24px !important;
+            border-radius: 0 !important; /* Remove border-radius on mobile for full height */
+            margin: 0 !important; /* No margin on mobile for full height */
+            height: 100% !important; /* Full height on mobile */
+            max-height: 100% !important; /* Full max-height on mobile */
+            overflow-y: hidden !important; /* Hide scroll for the modal container, let body scroll */
           }
           .payment-modal-header {
             padding: 24px 20px !important;
+            border-radius: 0 !important; 
           }
           .payment-modal-header h2 {
             font-size: 1.5rem !important;
@@ -6298,6 +6293,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
           }
           .payment-modal-body {
             padding: 20px !important;
+            overflow-y: auto !important; /* Allow scroll for modal body */
           }
           .payment-modal-info-header {
             flex-direction: column !important;
@@ -6308,6 +6304,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
           }
           .payment-modal-footer {
             padding: 16px 20px !important;
+            border-radius: 0 !important; /* Remove border-radius on mobile for full height */
           }
           .payment-modal-confirm-button {
             width: 100%;
@@ -6317,13 +6314,18 @@ const PaymentModal = ({ isOpen, onClose }) => {
 
         @media (max-width: 480px) {
           .payment-modal-overlay {
-            padding: 12px !important;
+            padding: 0 !important;
           }
           .payment-modal {
-            border-radius: 20px !important;
+            border-radius: 0 !important; /* Remove border-radius on mobile for full height */
+            margin: 0 !important; /* No margin on mobile for full height */
+            height: 100% !important; /* Full height on mobile */
+            max-height: 100% !important; /* Full max-height on mobile */
+            overflow-y: hidden !important; /* Hide scroll for the modal container, let body scroll */
           }
           .payment-modal-header {
             padding: 20px 16px !important;
+            border-radius: 0 !important; 
           }
           .payment-modal-header h2 {
             font-size: 1.35rem !important;
@@ -6349,6 +6351,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
           }
           .payment-modal-body {
             padding: 16px !important;
+            overflow-y: auto !important; /* Allow scroll for modal body */
           }
           .payment-modal-info-title {
             font-size: 1rem !important;
@@ -6364,6 +6367,7 @@ const PaymentModal = ({ isOpen, onClose }) => {
           }
           .payment-modal-footer {
             padding: 14px 16px !important;
+            border-radius: 0 !important; /* Remove border-radius on mobile for full height */
           }
         }
       `;
@@ -6406,20 +6410,10 @@ const PaymentModal = ({ isOpen, onClose }) => {
               className="payment-modal-icon-wrapper"
               style={modalStyles.iconWrapper}
             >
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+              <FaUniversity // Using FaUniversity as an example icon for banking
+                size={28}
                 style={{ color: "#ffffff" }}
-              >
-                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                <line x1="1" y1="10" x2="23" y2="10"></line>
-              </svg>
+              />
             </div>
             <h2 style={modalStyles.header}>Payment Information</h2>
             <p style={modalStyles.subtitle}>
@@ -6470,7 +6464,9 @@ const PaymentModal = ({ isOpen, onClose }) => {
                 className="payment-modal-price-amount"
                 style={modalStyles.priceAmount}
               >
-                R 850.00
+                {typeof displayAmount !== "undefined"
+                  ? formatCurrency(displayAmount)
+                  : "R 0.00"}
               </div>
             </div>
           </div>
@@ -6485,56 +6481,21 @@ const PaymentModal = ({ isOpen, onClose }) => {
               className="payment-modal-security-badge"
               style={modalStyles.securityBadge}
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
+              <FaLock size={14} />
               256-bit Encryption
             </div>
             <div
               className="payment-modal-security-badge"
               style={modalStyles.securityBadge}
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-              </svg>
+              <FaShieldAlt size={14} />
               PCI Compliant
             </div>
             <div
               className="payment-modal-security-badge"
               style={modalStyles.securityBadge}
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
+              <FaCheckCircle size={14} />
               Verified Account
             </div>
           </div>
@@ -6566,7 +6527,6 @@ const PaymentModal = ({ isOpen, onClose }) => {
   );
 };
 
-// Copy to clipboard utility function with better error handling
 const copyToClipboard = async (text) => {
   try {
     if (navigator.clipboard && window.isSecureContext) {
@@ -7501,29 +7461,31 @@ const StudyMaterialModal = ({
       bottom: 0,
       backgroundColor: "rgba(0, 0, 0, 0.75)",
       display: "flex",
-      alignItems: "center",
+      alignItems: isMobile ? "center" : "flex-start",
       justifyContent: "center",
       zIndex: 10000,
-      padding: 0,
+      padding: isMobile ? "0" : "0px",
       animation: "fadeIn 0.3s ease",
     },
     modal: {
       backgroundColor: "#f8fafc",
       backgroundImage: svgBgPattern,
       width: "100%",
-      height: "100%",
+      height: isMobile ? "100%" : "100%",
+      margin: isMobile ? "0" : "0 24px 24px 24px",
       display: "flex",
       flexDirection: "column",
       position: "relative",
       boxShadow: "0 15px 50px -10px rgba(0, 0, 0, 0.3)",
       animation: "slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
       overflow: "hidden",
+      borderRadius: isMobile ? "0" : "0 0 0px 0px",
     },
     header: {
       background: isMobile
         ? "#004999"
         : "linear-gradient(135deg, #0066CC 0%, #004999 50%, #003366 100%)",
-      padding: isMobile ? "24px 20px" : "32px 28px",
+      padding: isMobile ? "20px 20px" : "32px 28px",
       position: "relative",
       overflow: "hidden",
       flexShrink: 0,
@@ -7558,24 +7520,24 @@ const StudyMaterialModal = ({
     },
     headerContent: { position: "relative", zIndex: 1 },
     iconWrapper: {
-      width: isMobile ? "52px" : "64px",
-      height: isMobile ? "52px" : "64px",
+      width: isMobile ? "48px" : "64px",
+      height: isMobile ? "48px" : "64px",
       background: "rgba(255, 255, 255, 0.15)",
       borderRadius: "18px",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      marginBottom: isMobile ? "12px" : "16px",
+      marginBottom: isMobile ? "10px" : "16px",
       border: "1px solid rgba(255, 255, 255, 0.25)",
       boxShadow:
         "0 8px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
       animation: "float 3s ease-in-out infinite",
     },
     title: {
-      fontSize: isMobile ? "1.5rem" : "2rem",
+      fontSize: isMobile ? "1.3rem" : "2rem",
       fontWeight: "800",
       color: "#ffffff",
-      marginBottom: "8px",
+      marginBottom: "6px",
       lineHeight: "1.2",
       textAlign: "left",
       fontFamily: "'Montserrat', 'Inter', sans-serif",
@@ -7583,7 +7545,7 @@ const StudyMaterialModal = ({
       textShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
     },
     subtitle: {
-      fontSize: isMobile ? "0.85rem" : "0.95rem",
+      fontSize: isMobile ? "0.8rem" : "0.95rem",
       color: "rgba(255, 255, 255, 0.92)",
       fontWeight: "500",
       margin: 0,
@@ -7592,23 +7554,28 @@ const StudyMaterialModal = ({
       maxWidth: "90%",
     },
     body: {
-      padding: isMobile ? "20px 16px" : "28px",
+      padding: isMobile ? "16px" : "28px",
       flex: 1,
       overflowY: "auto",
+      overflowX: "hidden",
       display: "flex",
       flexDirection: "column",
-      gap: isMobile ? "20px" : "24px",
+      gap: isMobile ? "16px" : "24px",
+      minHeight: 0,
+      scrollbarWidth: "none",
+      msOverflowStyle: "none",
     },
     orderInfoCard: {
       background: isMobile
         ? "#e0f2fe"
         : "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)",
-      padding: isMobile ? "18px" : "22px",
+      padding: isMobile ? "16px" : "22px",
       borderRadius: "16px",
       border: "1px solid #bae6fd",
       position: "relative",
       overflow: "hidden",
       boxShadow: "0 4px 12px rgba(14, 165, 233, 0.08)",
+      flexShrink: 0,
     },
     orderInfoContent: { position: "relative", zIndex: 1 },
     orderInfoTitle: {
@@ -7644,19 +7611,19 @@ const StudyMaterialModal = ({
     },
     journeyContainer: {
       background: isMobile
-        ? "#fafafa"
-        : "linear-gradient(135deg, #ffffff 0%, #fafafa 100%)",
+        ? "#ffffff"
+        : "linear-gradient(135deg, #ffffff 0%, #ffffff 100%)",
       borderRadius: "20px",
-      padding: isMobile ? "28px 20px" : "40px 32px",
+      padding: isMobile ? "20px 16px" : "40px 32px",
       border: "1px solid #e2e8f0",
       boxShadow: "0 4px 16px rgba(0, 0, 0, 0.06)",
-      flex: 1,
       display: "flex",
       flexDirection: "column",
       justifyContent: "center",
       position: "relative",
       overflow: "hidden",
-      minHeight: isMobile ? "450px" : "350px",
+      minHeight: isMobile ? "auto" : "auto",
+      flexShrink: 0,
     },
     journeyBg: {
       position: "absolute",
@@ -7670,10 +7637,10 @@ const StudyMaterialModal = ({
     },
     journeyTitle: {
       textAlign: "center",
-      fontSize: isMobile ? "1.15rem" : "1.3rem",
+      fontSize: isMobile ? "1rem" : "1.3rem",
       fontWeight: "700",
       color: "#1e293b",
-      marginBottom: isMobile ? "32px" : "48px",
+      marginBottom: isMobile ? "20px" : "32px",
       fontFamily: "'Montserrat', 'Inter', sans-serif",
       position: "relative",
       zIndex: 1,
@@ -7681,44 +7648,29 @@ const StudyMaterialModal = ({
     },
     journeyVisuals: {
       position: "relative",
-      minHeight: isMobile ? "380px" : "240px",
+      minHeight: "auto",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       zIndex: 1,
-    },
-    svgContainer: {
-      position: "absolute",
-      top: "50%",
-      left: "50%",
-      transform: "translate(-50%, -50%)",
-      width: "100%",
-      height: "100%",
-      pointerEvents: "none",
-    },
-    journeyPath: {
-      stroke: "url(#pathGradient)",
-      strokeWidth: isMobile ? "2.5" : "3",
-      fill: "none",
-      strokeDasharray: 1500,
-      strokeDashoffset: 1500,
-      animation: "drawPath 2.5s ease-out 0.5s forwards",
+      paddingBottom: isMobile ? "20px" : "0",
     },
     journeyStages: {
       position: "relative",
       display: "flex",
       flexDirection: isMobile ? "column" : "row",
-      justifyContent: isMobile ? "center" : "space-between",
+      justifyContent: isMobile ? "center" : "space-around",
       alignItems: "center",
       zIndex: 2,
-      padding: isMobile ? "0" : "0 20px",
-      gap: isMobile ? "48px" : "0",
+      padding: isMobile ? "0" : "20px 40px",
+      gap: isMobile ? "24px" : "40px",
+      width: "100%",
     },
     journeyStage: {
       display: "flex",
       flexDirection: isMobile ? "row" : "column",
       alignItems: "center",
-      gap: isMobile ? "20px" : "16px",
+      gap: isMobile ? "16px" : "12px",
       textAlign: isMobile ? "left" : "center",
       opacity: 0,
       transform: "translateY(20px)",
@@ -7729,8 +7681,8 @@ const StudyMaterialModal = ({
       maxWidth: isMobile ? "280px" : "none",
     },
     journeyIcon: {
-      width: isMobile ? "168px" : "172px",
-      height: isMobile ? "168px" : "172px",
+      width: isMobile ? "70px" : "80px",
+      height: isMobile ? "70px" : "80px",
       borderRadius: "50%",
       flexShrink: 0,
       border: "3px solid #e2e8f0",
@@ -7760,7 +7712,7 @@ const StudyMaterialModal = ({
       flex: isMobile ? 1 : "none",
     },
     journeyLabel: {
-      fontSize: isMobile ? "0.95rem" : "0.85rem",
+      fontSize: isMobile ? "0.9rem" : "0.85rem",
       fontWeight: "700",
       color: "#475569",
       transition: "color 0.3s ease",
@@ -7770,7 +7722,7 @@ const StudyMaterialModal = ({
       letterSpacing: "0.03em",
     },
     journeySubtext: {
-      fontSize: isMobile ? "0.75rem" : "0.7rem",
+      fontSize: isMobile ? "0.7rem" : "0.7rem",
       color: "#94a3b8",
       fontWeight: "500",
       marginTop: "4px",
@@ -7780,16 +7732,17 @@ const StudyMaterialModal = ({
       flexDirection: "column",
       alignItems: "center",
       gap: isMobile ? "12px" : "16px",
-      padding: isMobile ? "20px 16px" : "24px",
+      padding: isMobile ? "18px 16px" : "24px",
       background: isMobile
         ? "#fef3c7"
         : "linear-gradient(135deg, #fefce8 0%, #fef3c7 100%)",
       borderRadius: "16px",
       border: "1px solid #fde047",
-      marginTop: "auto",
+      marginTop: isMobile ? "auto" : "0",
       boxShadow: "0 4px 12px rgba(250, 204, 21, 0.15)",
       position: "relative",
       overflow: "hidden",
+      flexShrink: 0,
     },
     downloadSectionGlow: {
       position: "absolute",
@@ -7821,20 +7774,20 @@ const StudyMaterialModal = ({
       display: "inline-flex",
       alignItems: "center",
       gap: isMobile ? "10px" : "12px",
-      padding: isMobile ? "14px 32px" : "16px 40px",
+      padding: isMobile ? "12px 28px" : "16px 40px",
       background: isMobile
         ? "#004999"
         : "linear-gradient(135deg, #0066CC 0%, #004999 100%)",
       color: "#ffffff",
       border: "none",
       borderRadius: "14px",
-      fontSize: isMobile ? "0.9rem" : "1rem",
+      fontSize: isMobile ? "0.85rem" : "1rem",
       fontWeight: "700",
       cursor: "pointer",
       transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       boxShadow:
         "0 8px 20px rgba(0, 102, 204, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
-      minWidth: isMobile ? "200px" : "220px",
+      minWidth: isMobile ? "180px" : "220px",
       justifyContent: "center",
       fontFamily: "'Montserrat', 'Inter', sans-serif",
       textTransform: "uppercase",
@@ -7854,48 +7807,35 @@ const StudyMaterialModal = ({
   };
 
   const styleSheet = `
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes slideIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
-    @keyframes drawPath { to { stroke-dashoffset: 0; } }
-    @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
-    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
-    
-    .journey-stage { animation: fadeInUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-    .journey-stage:nth-child(1) { animation-delay: 0.8s; }
-    .journey-stage:nth-child(2) { animation-delay: 1.1s; }
-    .journey-stage:nth-child(3) { animation-delay: 1.4s; }
-    
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
+  @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+  
+  .journey-stage { animation: fadeInUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  .journey-stage:nth-child(1) { animation-delay: 0.3s; }
+  .journey-stage:nth-child(2) { animation-delay: 0.5s; }
+  .journey-stage:nth-child(3) { animation-delay: 0.7s; }
+  
+  .journey-stage:hover .journey-icon { 
+    transform: scale(1.1) translateY(-4px); 
+    box-shadow: 0 10px 30px rgba(0, 102, 204, 0.2);
+  }
+  .journey-stage:hover .journey-label { color: #0f172a; }
+  
+  /* Hide scrollbar for all browsers */
+  .modal-body::-webkit-scrollbar {
+    display: none;
+  }
+  
+  @media (max-width: 768px) {
     .journey-stage:hover .journey-icon { 
-      transform: scale(1.1) translateY(-4px); 
-      box-shadow: 0 10px 30px rgba(0, 102, 204, 0.2);
+      transform: scale(1.05); 
     }
-    .journey-stage:hover .journey-label { color: #0f172a; }
-    
-    @media (max-width: 768px) {
-      .journey-stage:hover .journey-icon { 
-        transform: scale(1.05); 
-      }
-    }
-  `;
-
-  // Mobile path is shifted left. Desktop path is unchanged.
-  const pathData = isMobile
-    ? "M 180 50 Q 200 150, 180 250 T 180 450"
-    : "M 100 100 Q 250 60, 400 100 T 700 100";
-  // Mobile circle positions are also shifted left to match the path.
-  const circlePositions = isMobile
-    ? [
-        { cx: 180, cy: 50 },
-        { cx: 180, cy: 250 },
-        { cx: 180, cy: 450 },
-      ]
-    : [
-        { cx: 100, cy: 100 },
-        { cx: 400, cy: 100 },
-        { cx: 700, cy: 100 },
-      ];
+  }
+`;
 
   const journeyIconStyles = [
     {
@@ -7952,7 +7892,7 @@ const StudyMaterialModal = ({
             </div>
           </div>
 
-          <div style={styles.body}>
+          <div style={styles.body} className="modal-body">
             <div style={styles.orderInfoCard}>
               <div style={styles.orderInfoContent}>
                 <div style={styles.orderInfoTitle}>
@@ -8071,67 +8011,11 @@ const StudyMaterialModal = ({
               <div style={styles.journeyBg}></div>
               <h3 style={styles.journeyTitle}>Your Learning Journey</h3>
               <div style={styles.journeyVisuals}>
-                <svg
-                  style={styles.svgContainer}
-                  viewBox={isMobile ? "0 0 400 500" : "0 0 800 200"}
-                  preserveAspectRatio="xMidYMid meet"
-                >
-                  <defs>
-                    <linearGradient
-                      id="pathGradient"
-                      x1="0%"
-                      y1={isMobile ? "0%" : "0%"}
-                      x2={isMobile ? "0%" : "100%"}
-                      y2={isMobile ? "100%" : "0%"}
-                    >
-                      <stop
-                        offset="0%"
-                        style={{ stopColor: "#10b981", stopOpacity: 1 }}
-                      />
-                      <stop
-                        offset="50%"
-                        style={{ stopColor: "#3b82f6", stopOpacity: 1 }}
-                      />
-                      <stop
-                        offset="100%"
-                        style={{ stopColor: "#f59e0b", stopOpacity: 1 }}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <path d={pathData} style={styles.journeyPath} />
-                  {circlePositions.map((pos, idx) => (
-                    <circle
-                      key={idx}
-                      cx={pos.cx}
-                      cy={pos.cy}
-                      r="8"
-                      fill={
-                        idx === 0
-                          ? "#10b981"
-                          : idx === 1
-                          ? "#3b82f6"
-                          : "#f59e0b"
-                      }
-                      opacity="0"
-                    >
-                      <animate
-                        attributeName="opacity"
-                        values="0;1;1"
-                        dur="2s"
-                        begin={`${0.8 + idx * 0.3}s`}
-                        fill="freeze"
-                      />
-                    </circle>
-                  ))}
-                </svg>
                 <div style={styles.journeyStages}>
                   <div className="journey-stage" style={styles.journeyStage}>
                     <div className="journey-icon" style={journeyIconStyles[0]}>
                       <div style={styles.journeyIconInner}>
-                        <FaBookOpen
-                          size={isMobile ? 100 : 60}
-                          color="#10b981"
-                        />
+                        <FaBookOpen size={isMobile ? 32 : 36} color="#10b981" />
                       </div>
                     </div>
                     <div style={styles.journeyTextWrapper}>
@@ -8150,7 +8034,7 @@ const StudyMaterialModal = ({
                     <div className="journey-icon" style={journeyIconStyles[1]}>
                       <div style={styles.journeyIconInner}>
                         <FaGraduationCap
-                          size={isMobile ? 100 : 60}
+                          size={isMobile ? 32 : 36}
                           color="#3b82f6"
                         />
                       </div>
@@ -8168,7 +8052,7 @@ const StudyMaterialModal = ({
                   <div className="journey-stage" style={styles.journeyStage}>
                     <div className="journey-icon" style={journeyIconStyles[2]}>
                       <div style={styles.journeyIconInner}>
-                        <FaTrophy size={isMobile ? 100 : 60} color="#f59e0b" />
+                        <FaTrophy size={isMobile ? 32 : 36} color="#f59e0b" />
                       </div>
                     </div>
                     <div style={styles.journeyTextWrapper}>
@@ -8184,7 +8068,6 @@ const StudyMaterialModal = ({
                 </div>
               </div>
             </div>
-            {/* dd */}
 
             <div style={styles.downloadSection}>
               <div style={styles.downloadSectionGlow}></div>
@@ -8244,11 +8127,9 @@ const DashboardSection = ({ id, activeSection, orders, loading, setView }) => {
       fontSize: "1rem",
       fontWeight: "500",
     },
-    // ====================================================== //
-    // =========== NEW SUBTLE "EMPTY STATE" STYLES ============ //
-    // ====================================================== //
+
     noOrdersContainer: {
-      backgroundColor: "transparent", // No bright background
+      backgroundColor: "transparent",
       borderRadius: "var(--border-radius-lg)",
       padding: "clamp(2.5rem, 8vw, 4rem)",
       textAlign: "center",
@@ -8329,9 +8210,6 @@ const DashboardSection = ({ id, activeSection, orders, loading, setView }) => {
             ))}
           </div>
         ) : (
-          // ====================================================== //
-          // ======== UPDATED "EMPTY" VIEW WITH NEW STYLES ======== //
-          // ====================================================== //
           <div style={styles.noOrdersContainer}>
             <FaShoppingCart style={styles.noOrdersIcon} />
             <h3 style={styles.noOrdersTitle}>Your Order History is Empty</h3>
@@ -8477,13 +8355,12 @@ const CheckoutSection = ({
         .insert([orderPayload]);
       if (error) throw error;
 
-      addToast("Order placed successfully!", "success");
+      addToast("Order placed.", "success");
       setCart([]);
       await refreshOrders();
       setView("dashboard");
     } catch (error) {
-      console.error("Supabase order submission error:", error.message);
-      addToast(`Could not place order: ${error.message}`, "error");
+      addToast("Order failed.", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -8774,9 +8651,6 @@ const CheckoutSection = ({
                   onChange={handleInputChange}
                   required
                 >
-                  <option value="" disabled>
-                    Select a province...
-                  </option>
                   {provinces.map((p) => (
                     <option key={p} value={p}>
                       {p}
