@@ -60,6 +60,9 @@ export const GlobalStyles = `
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 100px; /* Adjust if header height changes */
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
 }
 
 body {
@@ -410,7 +413,7 @@ main section.active-section {
   box-shadow: var(--box-shadow-large); display: flex; align-items: center; gap: 1rem;
   opacity: 0; transform: translateX(120%);
   animation: slideInToast 0.4s var(--easing-dynamic) forwards, fadeOutToast 0.4s var(--easing-dynamic) 3.6s forwards;
-  min-width: 320px;
+  min-width: wrap;
 }
 .toast.success { background: linear-gradient(to right, var(--success-green), #34c759); }
 .toast.error { background: linear-gradient(to right, var(--error-red), #e55353); }
