@@ -20,6 +20,10 @@ import {
   FaTrophy,
   FaGraduationCap,
   FaBook,
+  FaCookie, 
+  FaDatabase,
+  FaUser, 
+  FaShareAlt,
   FaFileArchive,
   FaConciergeBell,
   FaCode,
@@ -373,6 +377,8 @@ function App() {
   const [viewAfterLogin, setViewAfterLogin] = useState(null);
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [isCookieConsentOpen, setIsCookieConsentOpen] = useState(false);
+  const [isDataPrivacyModalOpen, setIsDataPrivacyModalOpen] = useState(false); // State for DataPrivacyModal
   const addToast = useToast();
 
   // STATE ADDED: To manage the password reset email flow between components
@@ -625,6 +631,27 @@ function App() {
   ]);
 
   useEffect(() => {
+    // Check for consent on initial load
+    const consent = localStorage.getItem('gmt_cookie_consent');
+    if (!consent) {
+        // Use a timeout to avoid showing the banner immediately on a fast refresh,
+        // which can be jarring.
+        const timer = setTimeout(() => {
+            setIsCookieConsentOpen(true);
+        }, 1500); // Delay of 1.5 seconds
+        return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleAcceptCookies = () => {
+      localStorage.setItem('gmt_cookie_consent', 'true');
+      setIsCookieConsentOpen(false);
+      addToast("Cookie preferences saved!", "success");
+  };
+
+  const handlePrivacyPolicyClick = () => setView('privacy-policy');
+
+  useEffect(() => {
     const nonScrollingRoutes = [
       "account",
       "dashboard",
@@ -843,6 +870,331 @@ function App() {
             refreshOrders={fetchOrders}
           />
         );
+      case "privacy-policy":
+  return (
+    <div className="container py-5" style={{ minHeight: "70vh" }}>
+      {/* Inject styles to make this section black and white */}
+      <style>{`
+        .privacy-policy-content h1,
+        .privacy-policy-content h2,
+        .privacy-policy-content h3,
+        .privacy-policy-content h4,
+        .privacy-policy-content h5,
+        .privacy-policy-content strong,
+        .privacy-policy-content p,
+        .privacy-policy-content li,
+        .privacy-policy-content .text-muted {
+          color: #000 !important;
+        }
+        .privacy-policy-content a {
+          color: #000 !important;
+          text-decoration: underline;
+        }
+        .privacy-policy-content a:hover {
+          color: #333 !important;
+        }
+        .privacy-policy-content h4 {
+          font-size: 2.5rem !important; /* Smaller h */
+        }
+        .privacy-policy-content h2 {
+          font-size: 2rem !important; /* Smaller h2 */
+        }
+        .privacy-policy-content h5 {
+          font-size: 1rem !important; /* Smaller h5 */
+        }
+      `}</style>
+
+      <div className="privacy-policy-content">
+        <h1>Privacy Policy</h1>
+        <p className="text-muted">
+          <strong>Effective Date:</strong> November 2025
+        </p>
+
+        <div className="mt-4">
+          <p>
+            SigmaTeknologies ("we", "our", "us") places the utmost importance on your privacy and maintains an unwavering commitment to protecting and safeguarding your personal information in strict accordance with the{" "}
+            <strong>Protection of Personal Information Act (POPIA)</strong> of South Africa, which represents the cornerstone of data protection legislation in our jurisdiction. This comprehensive Privacy Policy has been carefully crafted to provide you with a complete and transparent explanation of the various methods and processes through which we collect, utilize, store, manage, and protect your personal data when you interact with us in any capacity or make use of our sophisticated software solutions and services.
+          </p>
+
+          <p>
+            Furthermore, this Privacy Policy serves as a binding agreement between you, the user or client, and SigmaTeknologies, and it is essential that you take the time to read, understand, and familiarize yourself with the terms and conditions outlined herein. By continuing to use our services, platforms, or engaging with our company in any manner whatsoever, you are explicitly indicating your full acceptance of and agreement to the practices, procedures, and policies described in this document.
+          </p>
+
+          <h2 className="mt-4">1. Who We Are</h2>
+          <p>
+            SigmaTeknologies is a professional and established software development company that is proudly based in the Republic of South Africa. Our organization specializes in the design, development, implementation, and ongoing maintenance of cutting-edge software systems and technological solutions for a diverse range of clients spanning multiple industries and sectors. Among our notable projects and client engagements is the GMT Health and Safety platform, which exemplifies our commitment to creating robust, reliable, and user-centric software solutions that meet the highest standards of quality and excellence.
+          </p>
+          
+          <p>
+            Our company operates with a strong foundation of technical expertise, professional integrity, and a customer-first approach that guides every aspect of our business operations. We understand that in today's digital age, the protection of personal information is not merely a legal obligation but a fundamental responsibility that we take very seriously indeed.
+          </p>
+
+          <p>
+            <strong>Company Information:</strong>
+          </p>
+          <ul>
+            <li>
+              <strong>Company Name:</strong> SigmaTeknologies
+            </li>
+            <li>
+              <strong>Physical Address:</strong> 8024 Ikaneng Street, Thabong, Welkom, South Africa
+            </li>
+            <li>
+              <strong>Email Address:</strong>{" "}
+              <a href="mailto:sigmateknologies@gmail.com">
+                sigmateknologies@gmail.com
+              </a>
+            </li>
+            <li>
+              <strong>Contact Phone Number:</strong> 067 989 9888
+            </li>
+          </ul>
+
+          <h2 className="mt-4">2. Information We Collect</h2>
+          <p>
+            In the course of providing our comprehensive range of services, software solutions, and ongoing support to our valued clients and users, we collect and process various categories and types of personal information that we deem necessary, relevant, and proportionate for the effective operation, delivery, and enhancement of our services. The collection of this information is carried out in a lawful, fair, and transparent manner, and only to the extent that it is required to fulfill our legitimate business purposes and contractual obligations.
+          </p>
+
+          <p>
+            The personal information that we collect may include, but is not necessarily limited to, the following categories:
+          </p>
+
+          <h5 className="mt-3">a. Personal Identification Information</h5>
+          <p>
+            This category encompasses basic identifying information that allows us to recognize, communicate with, and provide services to individual users and clients. The specific data points within this category include:
+          </p>
+          <ul>
+            <li>Your complete legal full name as it appears on official documents</li>
+            <li>Your primary email address and any alternative email addresses you provide</li>
+            <li>Your contact phone number(s), including mobile and landline numbers where applicable</li>
+            <li>The name of your company, organization, or business entity (if applicable and relevant to your engagement with our services)</li>
+          </ul>
+
+          <h5 className="mt-3">b. Account & Authentication Data</h5>
+          <p>
+            When you create an account with us or register to use our platforms and services, we necessarily collect and maintain certain authentication credentials and account-related information to ensure the security and integrity of your account. This information includes:
+          </p>
+          <ul>
+            <li>Your chosen username or the email address that you designate as your login identifier</li>
+            <li>Your account password, which is stored in our systems using industry-standard encryption protocols and secure hashing algorithms to prevent unauthorized access and ensure that even our own personnel cannot view your actual password in plain text format</li>
+          </ul>
+
+          <h5 className="mt-3">c. Transaction and Order Data</h5>
+          <p>
+            In situations where you engage in commercial transactions with us, purchase our services, or enter into contractual agreements for software development projects, we collect and maintain records of transaction-related information and order details, which may include:
+          </p>
+          <ul>
+            <li>The billing name and physical address associated with your payment method</li>
+            <li>Contact details and communication preferences for the purposes of invoicing, billing inquiries, and customer support</li>
+            <li>A comprehensive history of your projects, purchases, transactions, and service engagements with our company, which helps us maintain accurate records and provide better continuity of service</li>
+          </ul>
+
+          <h5 className="mt-3">d. Communication Data</h5>
+          <p>
+            Throughout the course of your relationship with SigmaTeknologies, you may communicate with us through various channels for different purposes, and we retain records of these communications to ensure quality service delivery and maintain proper documentation. This category includes:
+          </p>
+          <ul>
+            <li>Messages, inquiries, and correspondence that you send to us through email, contact forms on our platforms, or other communication channels</li>
+            <li>Your responses to our customer support requests, feedback surveys, satisfaction questionnaires, and other forms of engagement where we solicit your input and opinions</li>
+          </ul>
+
+          <h5 className="mt-3">e. Technical Information (when applicable)</h5>
+          <p>
+            When you interact with our digital platforms, websites, or software applications, certain technical information may be automatically collected to help us optimize performance, troubleshoot issues, and improve the overall user experience. This technical data includes:
+          </p>
+          <ul>
+            <li>Information about your browser type, version, and settings, as well as details about the device you are using to access our services</li>
+            <li>Cookies, tracking pixels, and analytics data that provide insights into how users interact with our platforms (please note that this information is only collected where you have provided your explicit consent in accordance with applicable laws and regulations)</li>
+          </ul>
+
+          <h2 className="mt-4">3. How We Use Your Information</h2>
+          <p>
+            The personal information that we collect from you is utilized exclusively and strictly for legitimate business purposes and operational necessities that are directly related to the provision of our services and the fulfillment of our contractual obligations. We want to emphasize that we do not engage in frivolous or unnecessary processing of your personal data, and every use of your information serves a specific, justifiable purpose.
+          </p>
+
+          <p>
+            The specific purposes for which we use your personal information include, but are not limited to, the following:
+          </p>
+          <ul>
+            <li>Creating, establishing, managing, maintaining, and administering user accounts and profiles on our platforms and systems</li>
+            <li>Processing, recording, tracking, and fulfilling orders, generating invoices, managing billing processes, and maintaining comprehensive project records and documentation</li>
+            <li>Providing timely, effective, and professional customer support and technical assistance to address your questions, concerns, and issues</li>
+            <li>Continuously improving, enhancing, optimizing, and refining our services, software systems, platforms, and overall user experience based on feedback and usage patterns</li>
+            <li>Ensuring full compliance with all applicable South African laws, regulations, regulatory requirements, and legal obligations that govern our operations and data processing activities</li>
+          </ul>
+          
+          <p>
+            It is critically important to note and understand that we do <strong>not</strong>, under any circumstances whatsoever, sell, rent, lease, trade, or share your personal information with any third parties for their own marketing purposes or commercial gain. Your data remains confidential and is used solely within the scope of our legitimate business relationship with you.
+          </p>
+
+          <h2 className="mt-4">4. How We Store and Protect Your Data</h2>
+          <p>
+            At SigmaTeknologies, we recognize that the security and protection of your personal data is of paramount importance, and we have therefore implemented comprehensive, multi-layered security measures and protocols to safeguard your information against unauthorized access, disclosure, alteration, or destruction. All personal data that you entrust to us is securely stored within SigmaTeknologies' private, dedicated servers and carefully managed databases that are maintained according to industry best practices and security standards.
+          </p>
+
+          <p>
+            Our data protection infrastructure incorporates several key security technologies and methodologies, including but not limited to advanced encryption techniques that render your data unreadable to unauthorized parties, stringent access control mechanisms that limit data access to only those personnel who have a legitimate business need, and secure password hashing algorithms that ensure even in the unlikely event of a security breach, your passwords cannot be easily compromised or reverse-engineered.
+          </p>
+
+          <p>
+            Access to stored personal information is strictly limited and granted only to authorized personnel who require such access for legitimate business purposes related to their job functions and responsibilities. We maintain detailed access logs and regularly audit our systems to ensure that data access policies are being properly enforced and adhered to.
+          </p>
+
+          <p>
+            Furthermore, we want to assure you that we do not store sensitive financial information such as credit card numbers, CVV codes, or complete banking details on our systems, as we believe in minimizing the storage of highly sensitive data and instead rely on trusted, secure third-party payment processors who specialize in handling financial transactions with the highest levels of security and compliance.
+          </p>
+
+          <h2 className="mt-4">5. Cookies and Analytics</h2>
+          <p>
+            In certain instances and under specific circumstances, some of our systems, platforms, and digital properties may utilize cookies, tracking technologies, or analytics tools to gather insights into user behavior and platform performance, all with the ultimate goal of improving and enhancing the overall user experience and the quality of our services.
+          </p>
+
+          <p>
+            To provide you with complete transparency regarding our use of these technologies, we want to explain the following key aspects:
+          </p>
+          <ul>
+            <li>
+              <strong>What we collect:</strong> The data gathered through cookies and analytics tools is primarily anonymous and aggregated in nature, including information such as which pages users visit most frequently, how long they spend on different sections of our platforms, their navigation patterns and behaviors, and the choices they make regarding consent and preferences.
+            </li>
+            <li>
+              <strong>Why we collect it:</strong> The primary purpose of collecting this analytical data is to gain a deeper understanding of how users interact with our platforms, identify areas where performance can be improved, detect and resolve technical issues more efficiently, and make data-driven decisions about feature development and user interface enhancements that will benefit all users.
+            </li>
+            <li>
+              <strong>Your control:</strong> You always retain complete control over your cookie preferences and settings. You have the ability to disable, block, or delete cookies through your browser's settings and configuration options at any time, though please be aware that doing so may affect the functionality or performance of certain features on our platforms.
+            </li>
+          </ul>
+          
+          <p>
+            It is our firm policy that we will only deploy and utilize non-essential cookies or integrate third-party analytics tools and services after we have obtained your explicit, informed consent in accordance with applicable privacy laws and regulations. Essential cookies that are strictly necessary for the basic functioning of our platforms may be used without explicit consent, as they are required for the site to operate properly.
+          </p>
+
+          <h2 className="mt-4">6. Data Retention</h2>
+          <p>
+            SigmaTeknologies adheres to a principled and responsible approach to data retention, guided by the fundamental principle that personal information should not be kept for longer than is necessary for the purposes for which it was originally collected. We retain personal information only for the minimum period of time required to achieve the specific purposes outlined in this Privacy Policy.
+          </p>
+
+          <p>
+            More specifically, we retain your personal information only for as long as necessary to accomplish one or more of the following objectives:
+          </p>
+          <ul>
+            <li>Fulfill and satisfy the specific purpose or purposes for which the information was originally collected, such as providing ongoing services, maintaining your account, or completing a project</li>
+            <li>Comply with various legal obligations, regulatory requirements, or contractual commitments that mandate the retention of certain records for specified periods of time</li>
+            <li>Resolve any disputes, claims, or disagreements that may arise, and enforce our agreements, terms of service, and other legal rights</li>
+          </ul>
+          
+          <p>
+            When personal information is no longer required for any legitimate purpose and all applicable retention periods have expired, we take appropriate steps to ensure that the information is either securely deleted using data destruction methods that make recovery impossible, or alternatively, rendered anonymous through anonymization techniques that remove all identifying characteristics, thereby ensuring that the data can no longer be linked back to any individual person.
+          </p>
+
+          <h2 className="mt-4">7. Your Rights Under POPIA</h2>
+          <p>
+            The Protection of Personal Information Act (POPIA) of South Africa grants you, as a data subject, several important and fundamental rights with respect to your personal information that we process and maintain. We are fully committed to respecting and facilitating the exercise of these rights, and we have established clear procedures to handle requests related to these rights in a timely and efficient manner.
+          </p>
+
+          <p>
+            Under POPIA, you have the following rights in relation to your personal data:
+          </p>
+          <ul>
+            <li>
+              <strong>Right of Access:</strong> You have the right to request and obtain a copy of your personal data that we hold in our systems, along with information about how we process that data, where it came from, and who we share it with.
+            </li>
+            <li>
+              <strong>Right to Correction:</strong> You have the right to ask us to update, correct, or rectify your personal information if you believe that any of the data we hold about you is inaccurate, incomplete, misleading, or out of date.
+            </li>
+            <li>
+              <strong>Right to Deletion (Right to be Forgotten):</strong> You have the right to request that we delete your personal data where it is appropriate to do so, such as when the data is no longer necessary for the purposes for which it was collected, or when you withdraw your consent and there is no other legal basis for processing.
+            </li>
+            <li>
+              <strong>Right to Withdraw Consent:</strong> In situations where we are processing your personal data based on your consent, you have the right to withdraw that consent at any time, including consent for processing activities or the use of cookies and tracking technologies.
+            </li>
+            <li>
+              <strong>Right to Object:</strong> You have the right to object to the processing of your personal data for certain purposes, such as direct marketing or profiling, or in situations where we are processing your data based on legitimate interests.
+            </li>
+          </ul>
+          
+          <p>
+            If you wish to exercise any of these rights or if you have any questions or concerns about how we process your personal information, please do not hesitate to contact us at{" "}
+            <a href="mailto:sigmateknologies@gmail.com">
+              sigmateknologies@gmail.com
+            </a>
+            . We will respond to your request in accordance with the timeframes stipulated by POPIA and will make every reasonable effort to accommodate your request where legally permissible.
+          </p>
+
+          <h2 className="mt-4">8. Data Sharing and Third Parties</h2>
+          <p>
+            While SigmaTeknologies strives to handle and process your personal information internally using our own resources and infrastructure wherever possible, there are certain limited circumstances and specific situations in which we may need to share or disclose your personal data to carefully selected third parties. However, we want to emphasize that any such sharing is conducted with the utmost care, caution, and only when absolutely necessary.
+          </p>
+
+          <p>
+            SigmaTeknologies may share limited portions of your data with trusted, reputable service providers and business partners who assist us in delivering our services, maintaining our infrastructure, or performing specific functions on our behalf. Examples of such third-party service providers include, but are not limited to, secure hosting providers who maintain the servers where our data is stored, analytics tools and platforms that help us understand user behavior and improve our services, and payment processors who handle financial transactions.
+          </p>
+
+          <p>
+            It is important to note that all third-party service providers with whom we share data are carefully vetted and selected based on their security practices and privacy commitments. These providers are contractually bound by strict confidentiality agreements and data protection obligations that are fully consistent with the requirements and standards set forth in POPIA, and they are prohibited from using your personal information for any purposes other than those specifically authorized by us.
+          </p>
+
+          <p>
+            Additionally, we may also disclose your personal information if we are required to do so by law, legal process, or governmental request, or if we believe in good faith that such disclosure is necessary to protect our rights, property, or safety, or the rights, property, or safety of others, including in situations involving potential fraud, security threats, or other harmful activities.
+          </p>
+
+          <h2 className="mt-4">9. Protection for Minors</h2>
+          <p>
+            SigmaTeknologies' services, platforms, and software solutions are specifically designed, intended, and marketed for use by adults, business professionals, and organizational entities. Our services are not directed at, targeted toward, or intended for use by children, minors, or individuals under the age of 18 years.
+          </p>
+
+          <p>
+            We do not knowingly, intentionally, or deliberately collect, process, store, or maintain personal data from children under the age of 18. If we become aware or are informed that a minor has provided us with personal information without appropriate parental or guardian consent, we will take immediate steps to investigate the matter and remove or delete that information from our systems as quickly as possible.
+          </p>
+
+          <p>
+            If you are a parent, guardian, or responsible adult and you believe that a minor under your care or supervision has provided us with personal information, we strongly encourage you to contact us immediately at{" "}
+            <a href="mailto:sigmateknologies@gmail.com">
+              sigmateknologies@gmail.com
+            </a>{" "}
+            so that we can take appropriate action to remove and delete such information from our records and databases in compliance with applicable laws protecting children's privacy.
+          </p>
+
+          <h2 className="mt-4">10. Changes to This Privacy Policy</h2>
+          <p>
+            As our business evolves, technologies advance, legal requirements change, and industry best practices develop over time, SigmaTeknologies may find it necessary or advisable to update, revise, or modify this Privacy Policy from time to time to reflect changes in our data processing practices, technological capabilities, organizational structure, or legal obligations under POPIA and other applicable laws.
+          </p>
+
+          <p>
+            When we make changes to this Privacy Policy, whether they are minor clarifications or more substantial revisions, the latest and most current version of the policy will always be made available to you upon request. We may also, at our discretion, notify you of significant changes through email, notifications within our platforms, or other appropriate means of communication.
+          </p>
+
+          <p>
+            Your continued use of our services, platforms, or ongoing engagement with SigmaTeknologies following the implementation of any updates or modifications to this Privacy Policy will constitute your acknowledgment and acceptance of the revised terms and conditions. We therefore encourage you to review this Privacy Policy periodically to stay informed about how we are protecting your personal information and to understand your rights and our obligations.
+          </p>
+
+          <h2 className="mt-4">11. Contact Information</h2>
+          <p>
+            If you have any questions, concerns, comments, or inquiries regarding this Privacy Policy, our data processing practices, or how we handle your personal information, or if you wish to exercise any of your rights under POPIA, we encourage and welcome you to reach out to us. Our team is committed to addressing your privacy-related matters promptly, professionally, and in full compliance with South African law.
+          </p>
+
+          <p>
+            You may contact us using any of the following methods:
+          </p>
+          <p>
+            <strong>SigmaTeknologies</strong>
+            <br />
+            8024 Ikaneng Street, Thabong, Welkom, South Africa
+            <br />
+            📧 <strong>Email:</strong>{" "}
+            <a href="mailto:sigmateknologies@gmail.com">
+              sigmateknologies@gmail.com
+            </a>
+            <br />
+            📞 <strong>Phone:</strong> 067 989 9888
+          </p>
+          
+          <p>
+            We are committed to addressing your privacy inquiries, questions, and requests promptly, professionally, and in strict compliance with the requirements and timelines established by South African data protection law and the Protection of Personal Information Act (POPIA). Your privacy and trust are of the utmost importance to us, and we strive to maintain the highest standards of transparency, accountability, and data protection in all aspects of our operations.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
       default:
         if (serviceToShow) {
           return (
@@ -944,6 +1296,11 @@ function App() {
         cartItems={cart}
         onRemoveItem={removeFromCartHandler}
         onCheckout={handleCheckout}
+      />
+      <CookieConsent
+        isOpen={isCookieConsentOpen}
+        onAccept={handleAcceptCookies}
+        onPrivacyPolicyClick={handlePrivacyPolicyClick}
       />
       <SpeedInsights />
       <Analytics />
@@ -9112,6 +9469,11 @@ const Footer = ({ companyInfo, locations, setView, googleMapsLoaded }) => {
                     </NavigateLink>
                   </li>
                   <li>
+                    <NavigateLink href="#privacy-policy" setView={setView}>
+                      Privacy Policy
+                    </NavigateLink>
+                  </li>
+                  <li>
                     <NavigateLink href="#contact" setView={setView}>
                       Contact
                     </NavigateLink>
@@ -9752,6 +10114,483 @@ const CartPanel = ({
             </button>
           </div>
         )}
+      </div>
+    </>
+  );
+};
+
+const DataPrivacyModal = ({ isOpen, onClose }) => {
+  if (!isOpen) return null;
+
+  const PrivacySection = ({ icon, title, children }) => (
+    <div className="privacy-section">
+      <div className="privacy-section-header">
+        {icon}
+        <h4>{title}</h4>
+      </div>
+      <div className="privacy-section-content">{children}</div>
+    </div>
+  );
+
+  return (
+    <>
+      <style>{`
+        /* Black and white override for the privacy modal - smaller headers */
+        .data-privacy-modal-bw .modal-header h3,
+        .data-privacy-modal-bw .privacy-section-header h4 {
+          color: #000 !important;
+          font-size: 1.5rem !important; /* Smaller h3 in modal header */
+        }
+
+        .data-privacy-modal-bw .privacy-section-header h4,
+        .data-privacy-modal-bw .privacy-section-content strong {
+          color: #000 !important;
+          font-size: 1rem !important; /* Smaller h4 in privacy sections */
+        }
+
+        .data-privacy-modal-bw .privacy-intro {
+          color: #333 !important;
+          font-size: 1rem !important; /* Smaller intro text */
+        }
+
+        .data-privacy-modal-bw .privacy-section-content p,
+        .data-privacy-modal-bw .privacy-section-content li {
+          color: #333 !important;
+          font-size: 0.95rem !important; /* Smaller paragraph and list item text */
+        }
+
+        .data-privacy-modal-bw .privacy-section-header {
+          background-color: #f0f0f0 !important; /* Neutral background for header */
+          border-bottom: 1px solid #d0d0d0 !important; /* Neutral border */
+        }
+
+        .data-privacy-modal-bw .privacy-section-content strong {
+          color: #000 !important;
+        }
+
+        .data-privacy-modal-bw .privacy-section-header svg {
+          color: #000 !important;
+        }
+
+        .data-privacy-modal {
+          max-width: 800px; /* Adjust as needed */
+        }
+
+        .privacy-intro {
+          font-size: 1.05rem;
+          color: var(--neutral-dark-gray);
+          margin-bottom: 2rem;
+          line-height: 1.7;
+        }
+
+        .privacy-section {
+          background-color: var(--neutral-lightest);
+          border: 1px solid var(--neutral-light-gray);
+          border-radius: var(--border-radius-md);
+          margin-bottom: 1.5rem;
+          overflow: hidden;
+          box-shadow: var(--box-shadow-light);
+        }
+
+        .privacy-section-header {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          padding: 1rem 1.5rem;
+          background-color: #f0f0f0; /* Neutral background */
+          border-bottom: 1px solid var(--neutral-medium-gray);
+        }
+
+        .privacy-section-header svg {
+          font-size: 1.8rem;
+          color: var(--primary-blue);
+          flex-shrink: 0;
+        }
+
+        .privacy-section-header h4 {
+          margin: 0;
+          font-size: 1.2rem;
+          color: #000; /* Black for header text */
+          font-family: var(--font-headings);
+          font-weight: 600;
+        }
+
+        .privacy-section-content {
+          padding: 1.5rem;
+        }
+
+        .privacy-section-content p {
+          margin-bottom: 1em;
+          font-size: 1rem;
+          color: #333; /* Dark gray for paragraph text */
+          line-height: 1.6;
+        }
+
+        .privacy-section-content ul {
+          list-style: disc;
+          padding-left: 1.5rem;
+          margin-bottom: 1em;
+        }
+
+        .privacy-section-content li {
+          margin-bottom: 0.5em;
+          color: var(--neutral-dark-gray);
+          line-height: 1.5;
+        }
+
+        .privacy-section-content strong {
+          color: var(--primary-blue-dark);
+        }
+
+        .privacy-section-content a {
+          color: var(--accent-lime);
+          text-decoration: underline;
+        }
+
+        .privacy-section-content a:hover {
+          color: var(--accent-lime-dark);
+        }
+
+        @media (max-width: 768px) {
+          .privacy-section-header {
+            padding: 0.8rem 1rem;
+          }
+          .privacy-section-header svg {
+            font-size: 1.5rem;
+          }
+          .privacy-section-header h4 {
+            font-size: 1rem;
+          }
+          .privacy-section-content {
+            padding: 1rem;
+          }
+          .privacy-section-content p,
+          .privacy-section-content ul,
+          .privacy-section-content li {
+            font-size: 0.9rem;
+          }
+        }
+      `}</style>
+      <div className="modal-overlay active" onClick={onClose}>
+        <div
+          className="modal-dialog data-privacy-modal data-privacy-modal-bw"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="modal-header">
+            <h3>
+              <FaShieldAlt /> GMT Safety Solutions Privacy Notice
+            </h3>
+            <button
+              className="modal-close-btn"
+              onClick={onClose}
+              aria-label="Close modal"
+            >
+              <FaTimes />
+            </button>
+          </div>
+
+          <div className="modal-body">
+            <p className="privacy-intro">
+              GMT Safety Solutions (“we”, “us”, “our”) is committed to
+              protecting your privacy in accordance with the Protection of
+              Personal Information Act (POPIA) of South Africa. This notice
+              explains what personal information we collect, why we collect it,
+              how it’s used, and your rights regarding that information.
+            </p>
+
+            {/* Cookies & Analytics */}
+            <PrivacySection icon={<FaCookie />} title="Cookies and Website Analytics">
+              <ul>
+                <li>
+                  <strong>What we collect:</strong> Your consent choices for
+                  cookie categories (Performance, Functional, Targeting).
+                </li>
+                <li>
+                  <strong>Why we collect it:</strong> To comply with POPIA by
+                  only loading non-essential scripts (like analytics tools)
+                  after you give informed consent.
+                </li>
+                <li>
+                  <strong>How it's stored:</strong> Cookie preferences are
+                  stored anonymously in your browser’s local storage. We do not
+                  store this information on our servers.
+                </li>
+              </ul>
+            </PrivacySection>
+
+            {/* Account Info */}
+            <PrivacySection icon={<FaUser />} title="Account Registration & Management">
+              <ul>
+                <li>
+                  <strong>What we collect:</strong> First Name, Last Name,
+                  Email, Phone Number, and a secure password (during
+                  registration).
+                </li>
+                <li>
+                  <strong>Why we collect it:</strong> To create and manage your
+                  user account, allowing access to your dashboard, service
+                  history, and platform features.
+                </li>
+                <li>
+                  <strong>How it's stored:</strong> Account information is
+                  stored securely in our private database. Passwords are
+                  encrypted (hashed) and never stored in plain text.
+                </li>
+              </ul>
+            </PrivacySection>
+
+            {/* Orders */}
+            <PrivacySection icon={<FaShoppingCart />} title="Service Orders & Billing">
+              <ul>
+                <li>
+                  <strong>What we collect:</strong> Your billing details,
+                  including name, company (optional), address, and contact
+                  information.
+                </li>
+                <li>
+                  <strong>Why we collect it:</strong> To process your service
+                  orders, generate invoices, and maintain a record of
+                  transactions linked to your account.
+                </li>
+                <li>
+                  <strong>How it's stored:</strong> Securely linked to your user
+                  profile within our servers. We do not store any credit card or
+                  payment details.
+                </li>
+              </ul>
+            </PrivacySection>
+
+            {/* Contact Form */}
+            <PrivacySection icon={<FaEnvelope />} title="Contact Forms & Support">
+              <ul>
+                <li>
+                  <strong>What we collect:</strong> Your name, email address,
+                  and the message or query you send to us.
+                </li>
+                <li>
+                  <strong>Why we collect it:</strong> To respond to inquiries,
+                  provide support, and ensure efficient communication.
+                </li>
+                <li>
+                  <strong>How it's stored:</strong> Securely stored within our
+                  systems to track support history and maintain service quality.
+                </li>
+              </ul>
+            </PrivacySection>
+
+            {/* Data Retention */}
+            <PrivacySection icon={<FaClock />} title="Data Retention & Deletion">
+              <ul>
+                <li>
+                  <strong>How long we keep it:</strong> We retain personal
+                  information only as long as necessary to fulfill its intended
+                  purpose, comply with legal obligations, or maintain your
+                  active account.
+                </li>
+                <li>
+                  <strong>When deleted:</strong> Once data is no longer
+                  required, it is securely deleted or anonymized in line with
+                  POPIA standards.
+                </li>
+              </ul>
+            </PrivacySection>
+
+            {/* Data Security */}
+            <PrivacySection icon={<FaLock />} title="Data Security">
+              <ul>
+                <li>
+                  <strong>Protection measures:</strong> We use encryption,
+                  password hashing, access controls, and secure databases to
+                  protect your information against unauthorized access or
+                  misuse.
+                </li>
+                <li>
+                  <strong>Where it's stored:</strong> All data is hosted on
+                  GMT Safety Solutions’ secure servers located in South Africa.
+                  No data is sold or shared for advertising purposes.
+                </li>
+              </ul>
+            </PrivacySection>
+
+            {/* Data Sharing */}
+            <PrivacySection
+              icon={<FaShareAlt />}
+              title="Information Sharing & Disclosure"
+            >
+              <ul>
+                <li>
+                  <strong>We do not sell your information.</strong> Data is
+                  shared only when necessary to deliver our services, comply
+                  with the law, or maintain platform security.
+                </li>
+                <li>
+                  <strong>Third-party access:</strong> In limited cases, trusted
+                  service providers may access data under confidentiality
+                  agreements (for example, hosting or analytics services).
+                </li>
+                <li>
+                  <strong>Legal obligations:</strong> We may disclose
+                  information if required by law, court order, or regulatory
+                  authority.
+                </li>
+              </ul>
+            </PrivacySection>
+
+            {/* POPIA Rights */}
+            <PrivacySection icon={<FaInfoCircle />} title="Your Rights Under POPIA">
+              <p>You have the right to:</p>
+              <ul>
+                <li>
+                  <strong>Access:</strong> Request a copy of your personal
+                  information that we hold.
+                </li>
+                <li>
+                  <strong>Correction:</strong> Update or correct your
+                  information anytime through your account settings.
+                </li>
+                <li>
+                  <strong>Objection:</strong> Object to certain processing
+                  activities, including direct marketing.
+                </li>
+                <li>
+                  <strong>Withdraw consent:</strong> Change your cookie
+                  preferences or request account deletion.
+                </li>
+                <li>
+                  <strong>Erasure:</strong> Request permanent deletion of your
+                  personal information when it’s no longer needed.
+                </li>
+                <li>
+                  <strong>Complain:</strong> Lodge a complaint with the
+                  Information Regulator if you believe your information is being
+                  misused.
+                </li>
+              </ul>
+              <p>
+                Information Regulator (South Africa):{" "}
+                <a
+                  href="https://www.justice.gov.za/inforeg/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  https://www.justice.gov.za/inforeg/
+                </a>
+              </p>
+            </PrivacySection>
+
+            {/* Contact Details */}
+            <PrivacySection icon={<FaDatabase />} title="Contact Information">
+              <p>
+                For any privacy-related questions, data access requests, or
+                complaints, please contact us:
+              </p>
+              <ul>
+                <li>
+                  <strong>Company:</strong> GMT Safety Solutions
+                </li>
+                <li>
+                  <strong>Address:</strong> 8024 Ikaneng Street, Thabong,
+                  Welkom, South Africa
+                </li>
+                <li>
+                  <strong>Phone:</strong> +27 69 512 3445
+                </li>
+                <li>
+                  <strong>Email:</strong>{" "}
+                  <a href="mailto:george@gmtsafety.co.za">
+                    george@gmtsafety.co.za
+                  </a>
+                </li>
+              </ul>
+            </PrivacySection>
+          </div>
+
+          <div className="modal-footer">
+            <button className="btn btn-primary" onClick={onClose}>
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+const CookieConsent = ({ isOpen, onAccept, onPrivacyPolicyClick }) => {
+  if (!isOpen) return null;
+
+  const styles = `
+    @keyframes slideUpBanner {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .cookie-consent-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: var(--primary-blue-dark);
+      color: var(--text-light);
+      padding: 1.5rem 2rem;
+      z-index: 1500;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 2rem;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+      transform: translateY(100%);
+      animation: slideUpBanner 0.5s 0.5s ease-out forwards;
+    }
+
+    .cookie-consent-content p {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0;
+      color: var(--neutral-light-gray);
+    }
+
+    .cookie-consent-content a {
+      color: var(--accent-lime);
+      text-decoration: underline;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .cookie-consent-actions {
+      display: flex;
+      gap: 1rem;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+      .cookie-consent-banner {
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1.5rem;
+        text-align: center;
+      }
+    }
+  `;
+
+  return (
+    <>
+      <style>{styles}</style>
+      <div className="cookie-consent-banner">
+        <div className="cookie-consent-content">
+          <p>
+            We use essential cookies to make our site work. With your consent, we may also use non-essential cookies to improve user experience. By clicking “Accept,” you agree to our website's cookie use as described in our{' '}
+            <a onClick={onPrivacyPolicyClick}>
+              Privacy Policy
+            </a>.
+          </p>
+        </div>
+        <div className="cookie-consent-actions">
+          <button className="btn btn-primary" onClick={onAccept}>
+            Accept
+          </button>
+        </div>
       </div>
     </>
   );
